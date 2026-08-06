@@ -4,14 +4,15 @@
 
 The repo (`WorkSync frontend` scaffolding) is being repurposed for a new product: **Smart Internal Knowledge Portal**, an internal knowledge-management system with an integrated RAG Assistant that answers employee questions from internal documents, with source citations.
 
-This spec covers the **visual design and UI structure** for four pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
+This spec covers the **visual design and UI structure** for five pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
 
 1. Portal shell (navigation, responsive behavior)
 2. Document Library page
-3. RAG Assistant ("Ask AI") panel
-4. Login and Set-password (invite acceptance) screens
+3. Document detail panel
+4. RAG Assistant ("Ask AI") panel
+5. Login and Set-password (invite acceptance) screens
 
-Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, document detail/viewer page, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
+Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
 
 Note: the previous `CLAUDE.md` / `DESIGN.md` (describing a kanban product, "WorkSync") were deleted from the working tree — this spec's design system replaces them; a follow-up task should rewrite `CLAUDE.md`/`DESIGN.md` to describe the actual product once implementation starts.
 
@@ -111,6 +112,18 @@ Both light and dark mode use the same structure; only the token values swap (see
 - Editor: full access within Spaces where they hold the Editor role.
 - Admin: full access everywhere, plus sees Users & Roles in the shell.
 
+## Document detail panel
+
+**Form factor: floating slide-over panel** (420px, right-aligned), same pattern as the Ask AI panel — opened by clicking a row in the Document Library table, dims/blurs the table behind it, closes back to exactly where the user was.
+
+**Metadata + actions only — no embedded file preview.** The panel shows Space, file type/size, updated-by, and updated-date in a 2-column grid, then an action row: **Open/Download** (primary — opens the original file in a new tab/app), **Edit details**, **Replace file**, **Delete** (danger-styled). Opening the actual file content is delegated to the browser/OS, not rendered inline — keeps the panel simple and avoids building a PDF/doc viewer for this pass.
+
+**"Cited by the Assistant"** section below the actions: a list of the questions the RAG Assistant has answered using this document, each showing the question text, how many times it's been asked, and when it was last asked. This reuses the same underlying citation-tracking data as the Document Library's "Cited" column count — this panel is where that count becomes a real list.
+
+No version history in this pass (considered and deliberately deferred — not required for the MVP).
+
+**Permissions:** action row (Edit/Replace/Delete) only renders for Editor (in Spaces where they hold that role) and Admin; Employee sees metadata, the citation list, and Open/Download only.
+
 ## RAG Assistant ("Ask AI")
 
 **Form factor: floating slide-over panel** (440px, right-aligned, dims/blurs the page behind it), not a dedicated full page. Opens from the "Ask AI" nav item or its mobile bottom-tab equivalent; the current page stays mounted behind it (visible when the panel closes), so a user can ask a question without losing their place in the Document Library or elsewhere.
@@ -145,6 +158,7 @@ Both screens reuse the shell's tokens (`--accent` teal for primary actions and l
 
 ## Non-goals for this spec
 
-- Visual design for: document viewer/detail, Users & Roles admin page, Space creation/management, the feedback-ratio dashboard.
+- Visual design for: Users & Roles admin page, Space creation/management, the feedback-ratio dashboard.
+- An embedded in-app file viewer (PDF/doc rendering) — the document detail panel only links out to the original file.
 - Real API/data integration — all mockups use static example content.
 - Accessibility audit beyond baseline (visible focus states, reduced-motion respect) — not yet verified against this spec's components.
