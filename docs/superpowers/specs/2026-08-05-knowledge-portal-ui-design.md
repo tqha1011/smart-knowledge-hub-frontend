@@ -4,13 +4,14 @@
 
 The repo (`WorkSync frontend` scaffolding) is being repurposed for a new product: **Smart Internal Knowledge Portal**, an internal knowledge-management system with an integrated RAG Assistant that answers employee questions from internal documents, with source citations.
 
-This spec covers the **visual design and UI structure** for three pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
+This spec covers the **visual design and UI structure** for four pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
 
 1. Portal shell (navigation, responsive behavior)
 2. Document Library page
 3. RAG Assistant ("Ask AI") panel
+4. Login and Set-password (invite acceptance) screens
 
-Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, document detail/viewer page, login/auth screens, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
+Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, document detail/viewer page, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
 
 Note: the previous `CLAUDE.md` / `DESIGN.md` (describing a kanban product, "WorkSync") were deleted from the working tree — this spec's design system replaces them; a follow-up task should rewrite `CLAUDE.md`/`DESIGN.md` to describe the actual product once implementation starts.
 
@@ -22,6 +23,7 @@ Two permission layers, not just one flat role:
 - **Per-Space role** (`SpaceMembership.role`) — a user's effective permissions in a given Space can differ from their global role (e.g. Editor in Space A, Employee/viewer-only in Space B).
 
 Effective behavior:
+
 - **Employee**: read-only — view Spaces they're a member of, search, ask the RAG Assistant, submit feedback on answers.
 - **Editor** (per Space): upload/edit/delete documents in that Space, resolve that Space's knowledge-gap queue (unanswered questions).
 - **Admin** (global): everything Editor can do in every Space, plus manage users, manage Spaces, assign per-Space roles, and view the aggregate dashboard.
@@ -36,19 +38,19 @@ The shell nav is designed against the **Admin** view (fullest nav — includes "
 
 ### Color
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--bg` | `#FAF8F4` | `#14161B` | page background |
-| `--surface` | `#FFFFFF` | `#1B1E26` | cards, panels, table |
-| `--surface-sunken` | `#F1EEE7` | `#0F1116` | inputs, filter chips, inactive fills |
-| `--border` | `#ECE8DE` | `#2A2E38` | hairlines |
-| `--ink` | `#1C2033` | `#EDEBE4` | primary text |
-| `--ink-muted` | `#6E6A5F` | `#9CA3AF` | secondary text |
-| `--accent` (Assistant / active state) | `#0E8F82` (teal) | `#35C9B8` | Ask AI, active nav, primary buttons |
-| `--accent-soft` | `#E3F3F0` | `#16302D` | accent backgrounds |
-| `--citation-bg` / `--citation-fg` (amber) | `#FBF0DC` / `#B8860B` | `#2B2415` / `#E3A64A` | citation chips |
-| `--warn-bg` / `--warn-fg` | `#FDEAEA` / `#C0392B` | `#331A1A` / `#E38080` | knowledge-gap / needs-attention counts |
-| `--avatar-bg` / `--avatar-fg` | `#1C2033` / `#FFFFFF` | `#EDEBE4` / `#14161B` | avatar chips |
+| Token                                     | Light                 | Dark                  | Use                                    |
+| ----------------------------------------- | --------------------- | --------------------- | -------------------------------------- |
+| `--bg`                                    | `#FAF8F4`             | `#14161B`             | page background                        |
+| `--surface`                               | `#FFFFFF`             | `#1B1E26`             | cards, panels, table                   |
+| `--surface-sunken`                        | `#F1EEE7`             | `#0F1116`             | inputs, filter chips, inactive fills   |
+| `--border`                                | `#ECE8DE`             | `#2A2E38`             | hairlines                              |
+| `--ink`                                   | `#1C2033`             | `#EDEBE4`             | primary text                           |
+| `--ink-muted`                             | `#6E6A5F`             | `#9CA3AF`             | secondary text                         |
+| `--accent` (Assistant / active state)     | `#0E8F82` (teal)      | `#35C9B8`             | Ask AI, active nav, primary buttons    |
+| `--accent-soft`                           | `#E3F3F0`             | `#16302D`             | accent backgrounds                     |
+| `--citation-bg` / `--citation-fg` (amber) | `#FBF0DC` / `#B8860B` | `#2B2415` / `#E3A64A` | citation chips                         |
+| `--warn-bg` / `--warn-fg`                 | `#FDEAEA` / `#C0392B` | `#331A1A` / `#E38080` | knowledge-gap / needs-attention counts |
+| `--avatar-bg` / `--avatar-fg`             | `#1C2033` / `#FFFFFF` | `#EDEBE4` / `#14161B` | avatar chips                           |
 
 Teal is reserved for the Assistant and active/primary state — it's what signals "AI is here." Amber is reserved for citations — it never means anything else, so a citation chip is recognizable at a glance anywhere in the product.
 
@@ -72,12 +74,14 @@ Numbered **citation chips** (amber, monospace) — inline in Assistant answers a
 **Structure:** persistent icon rail (56px, always visible on desktop) + expandable labeled sidebar (~200px) + main content area with a topbar (search, theme toggle, avatar).
 
 Sidebar sections, top to bottom:
+
 1. **Space switcher** — pill button at the top (colored dot + Space name + chevron).
 2. **Knowledge** eyebrow — `Documents`, `Needs attention` (with a count badge once knowledge gaps exist).
 3. **Assistant** eyebrow — `Ask AI` (teal text, small pulse dot signaling availability). Clicking it opens the floating panel (see below) — it does not navigate away.
 4. **Admin** eyebrow (Admin only) — `Users & Roles`.
 
 **Responsive behavior** (verified by resizing a real browser window, not device frames):
+
 - **≥ 980px**: full rail + sidebar.
 - **< 980px**: sidebar hides; rail remains; content area drops to 2-column grids where relevant.
 - **< 640px**: rail also hides. Replaced by:
@@ -93,6 +97,7 @@ Both light and dark mode use the same structure; only the token values swap (see
 **View type: list/table**, chosen over a card/grid because the page needs to support scanning and comparing metadata (category, owner, update date, citation count) across potentially large document sets — a grid is more decorative but slower to scan at volume.
 
 **Page structure:**
+
 - Title row: `Documents` (Fraunces) + subtitle (`{Space name} · {count} documents · {n} need attention`) + primary "Upload document" button (Editor/Admin only; hidden for Employee).
 - **Tabs**: `All documents` | `Needs attention` (badge = knowledge-gap count).
 - Category filter chips (pill-style, single active state) above the table — filters within the current Space.
@@ -101,6 +106,7 @@ Both light and dark mode use the same structure; only the token values swap (see
 **"Needs attention" tab** = the knowledge-gap queue: unanswered/low-confidence questions logged automatically when the RAG Assistant can't find a confident source (see below). Each item shows the question text, how many times it's been asked, and two actions: **Mark resolved** / **Ignore**. This is deliberately a separate, distinct list from answer feedback (see Feedback, below) — the two are not merged.
 
 **Permissions on this page:**
+
 - Employee: read/search only, no Upload button, no row actions, no Needs-attention tab actions.
 - Editor: full access within Spaces where they hold the Editor role.
 - Admin: full access everywhere, plus sees Users & Roles in the shell.
@@ -112,6 +118,7 @@ Both light and dark mode use the same structure; only the token values swap (see
 **Scope:** answers are drawn from **all Spaces the user has access to** (not just the currently selected Space) — this is more useful than a single-Space-scoped assistant, but requires every citation to show which Space it came from so multi-Space answers aren't confusing.
 
 **Panel structure:**
+
 - Header: "Ask AI" (Fraunces) + small scope line (`Searching across N spaces you have access to`) + close button.
 - Scrollable thread: user messages (right-aligned, accent-filled bubble), assistant messages (left-aligned, neutral bubble).
 - Assistant answers contain **inline numbered citation chips** (amber) at the exact claim they support, plus a **sources list** underneath — each source repeats its chip number, document title, and a Space badge.
@@ -121,8 +128,23 @@ Both light and dark mode use the same structure; only the token values swap (see
 
 **Mobile:** panel becomes full-viewport width instead of a fixed 440px column.
 
+## Login and Set-password screens
+
+**No public self-registration.** Admin provisions accounts (and assigns Space roles) up front; there is no "Register" flow in the open-signup sense. Two separate full-screen routes instead:
+
+- `/login` — returning users.
+- `/set-password?token=...` — invite acceptance / first-time password setup, reached via a link Admin/the system sends after provisioning an account. **Not the same screen as Login** — a distinct route, shown standalone, never side-by-side with it in the real app (they were only shown together in one mockup for side-by-side review during brainstorming).
+
+**Layout: centered card, minimal** (chosen over a split-screen brand panel) — logo/wordmark above a compact form on the plain `--bg` background, no side illustration panel. Simpler to build and identical across every screen size; the trade-off (no product-storytelling moment on entry) was accepted deliberately.
+
+**Login fields:** email + password only (no SSO for now). Below the fields: a "Keep me signed in" checkbox and a "Forgot password?" link on the same row. Primary "Sign in" button. An error banner (amber-adjacent warn tokens) appears above the fields on failed login: "Incorrect email or password. Try again." Footer line for the no-self-registration reality: "No access yet? Contact your workspace admin."
+
+**Set-password fields:** an **invite-context banner** above the form stating what the person is joining, e.g. "Joining **Engineering** space as **Editor**" (pulls from the invite token) — this is the one thing that makes the screen legible as "someone set this up for you," not a generic signup. Email field is pre-filled and disabled (from the invite token). New password + confirm password fields, with a hint below the password field ("At least 8 characters, one number"). Primary "Set password & continue" button.
+
+Both screens reuse the shell's tokens (`--accent` teal for primary actions and links, `--warn-*` for the error banner, `--accent-soft` for the invite-context banner, Fraunces for the wordmark/heading, Manrope for everything else) — no new tokens needed.
+
 ## Non-goals for this spec
 
-- Visual design for: login, document viewer/detail, Users & Roles admin page, Space creation/management, the feedback-ratio dashboard.
+- Visual design for: document viewer/detail, Users & Roles admin page, Space creation/management, the feedback-ratio dashboard.
 - Real API/data integration — all mockups use static example content.
 - Accessibility audit beyond baseline (visible focus states, reduced-motion respect) — not yet verified against this spec's components.
