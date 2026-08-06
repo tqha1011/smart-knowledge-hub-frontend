@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg: #faf8f4;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1eee7;
+  --color-border: #ece8de;
+  --color-ink: #1c2033;
+  --color-ink-muted: #6e6a5f;
+  --color-accent: #0e8f82;
+  --color-accent-soft: #e3f3f0;
+  --color-citation-bg: #fbf0dc;
+  --color-citation-fg: #b8860b;
+  --color-warn-bg: #fdeaea;
+  --color-warn-fg: #c0392b;
+  --color-avatar-bg: #1c2033;
+  --color-avatar-fg: #ffffff;
+
+  --font-display: "Fraunces", serif;
+  --font-sans: "Manrope", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+/* Dark mode: toggle by adding/removing the `dark` class on <html>.
+   Utilities like bg-bg / text-ink resolve through these same custom
+   properties, so no `dark:` variants are needed per component. */
+.dark {
+  --color-bg: #14161b;
+  --color-surface: #1b1e26;
+  --color-surface-sunken: #0f1116;
+  --color-border: #2a2e38;
+  --color-ink: #edebe4;
+  --color-ink-muted: #9ca3af;
+  --color-accent: #35c9b8;
+  --color-accent-soft: #16302d;
+  --color-citation-bg: #2b2415;
+  --color-citation-fg: #e3a64a;
+  --color-warn-bg: #331a1a;
+  --color-warn-fg: #e38080;
+  --color-avatar-bg: #edebe4;
+  --color-avatar-fg: #14161b;
+}
