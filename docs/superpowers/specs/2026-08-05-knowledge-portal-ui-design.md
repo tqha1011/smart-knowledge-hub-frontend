@@ -4,13 +4,14 @@
 
 The repo (`WorkSync frontend` scaffolding) is being repurposed for a new product: **Smart Internal Knowledge Portal**, an internal knowledge-management system with an integrated RAG Assistant that answers employee questions from internal documents, with source citations.
 
-This spec covers the **visual design and UI structure** for five pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
+This spec covers the **visual design and UI structure** for six pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
 
 1. Portal shell (navigation, responsive behavior)
 2. Document Library page
 3. Document detail panel
-4. RAG Assistant ("Ask AI") panel
-5. Login and Set-password (invite acceptance) screens
+4. Upload / Edit document panel
+5. RAG Assistant ("Ask AI") panel
+6. Login and Set-password (invite acceptance) screens
 
 Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
 
@@ -39,21 +40,24 @@ The shell nav is designed against the **Admin** view (fullest nav — includes "
 
 ### Color
 
-| Token                                     | Light                 | Dark                  | Use                                    |
-| ----------------------------------------- | --------------------- | --------------------- | -------------------------------------- |
-| `--bg`                                    | `#FAF8F4`             | `#14161B`             | page background                        |
-| `--surface`                               | `#FFFFFF`             | `#1B1E26`             | cards, panels, table                   |
-| `--surface-sunken`                        | `#F1EEE7`             | `#0F1116`             | inputs, filter chips, inactive fills   |
-| `--border`                                | `#ECE8DE`             | `#2A2E38`             | hairlines                              |
-| `--ink`                                   | `#1C2033`             | `#EDEBE4`             | primary text                           |
-| `--ink-muted`                             | `#6E6A5F`             | `#9CA3AF`             | secondary text                         |
-| `--accent` (Assistant / active state)     | `#0E8F82` (teal)      | `#35C9B8`             | Ask AI, active nav, primary buttons    |
-| `--accent-soft`                           | `#E3F3F0`             | `#16302D`             | accent backgrounds                     |
-| `--citation-bg` / `--citation-fg` (amber) | `#FBF0DC` / `#B8860B` | `#2B2415` / `#E3A64A` | citation chips                         |
-| `--warn-bg` / `--warn-fg`                 | `#FDEAEA` / `#C0392B` | `#331A1A` / `#E38080` | knowledge-gap / needs-attention counts |
-| `--avatar-bg` / `--avatar-fg`             | `#1C2033` / `#FFFFFF` | `#EDEBE4` / `#14161B` | avatar chips                           |
+| Token                                               | Light                                            | Dark                                             | Use                                    |
+| --------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------ | -------------------------------------- |
+| `--bg`                                              | `#FAF8F4`                                        | `#14161B`                                        | page background                        |
+| `--surface`                                         | `#FFFFFF`                                        | `#1B1E26`                                        | cards, panels, table                   |
+| `--surface-sunken`                                  | `#F1EEE7`                                        | `#0F1116`                                        | inputs, filter chips, inactive fills   |
+| `--border`                                          | `#ECE8DE`                                        | `#2A2E38`                                        | hairlines                              |
+| `--ink`                                             | `#1C2033`                                        | `#EDEBE4`                                        | primary text                           |
+| `--ink-muted`                                       | `#6E6A5F`                                        | `#9CA3AF`                                        | secondary text                         |
+| `--accent` (Assistant / active state)               | `#0E8F82` (teal)                                 | `#35C9B8`                                        | Ask AI, active nav, primary buttons    |
+| `--accent-soft`                                     | `#E3F3F0`                                        | `#16302D`                                        | accent backgrounds                     |
+| `--citation-bg` / `--citation-fg` (amber)           | `#FBF0DC` / `#B8860B`                            | `#2B2415` / `#E3A64A`                            | citation chips                         |
+| `--warn-bg` / `--warn-fg`                           | `#FDEAEA` / `#C0392B`                            | `#331A1A` / `#E38080`                            | knowledge-gap / needs-attention counts |
+| `--avatar-bg` / `--avatar-fg`                       | `#1C2033` / `#FFFFFF`                            | `#EDEBE4` / `#14161B`                            | avatar chips                           |
+| `--status-ready-bg` / `--status-ready-fg` (green)   | `#E7F5EC` / `#2F7D5B`                            | `#1B2E22` / `#5FBE8A`                            | document processing status: Ready      |
+| `--status-processing-bg` / `--status-processing-fg` | same values as `--citation-bg` / `--citation-fg` | same values as `--citation-bg` / `--citation-fg` | document processing status: Processing |
+| `--status-failed-bg` / `--status-failed-fg`         | same values as `--warn-bg` / `--warn-fg`         | same values as `--warn-bg` / `--warn-fg`         | document processing status: Failed     |
 
-Teal is reserved for the Assistant and active/primary state — it's what signals "AI is here." Amber is reserved for citations — it never means anything else, so a citation chip is recognizable at a glance anywhere in the product.
+Teal is reserved for the Assistant and active/primary state — it's what signals "AI is here." Amber is reserved for citations and (via `--status-processing-*`) the "processing" document status — both read as "in progress, not final yet," so the reuse is semantic, not accidental. `--status-failed-*` deliberately mirrors `--warn-*` since a failed document is the same severity as a knowledge gap. `--status-ready-*` (green) is the only genuinely new pair — success/complete didn't have a token yet.
 
 ### Typography
 
@@ -122,7 +126,22 @@ Both light and dark mode use the same structure; only the token values swap (see
 
 No version history in this pass (considered and deliberately deferred — not required for the MVP).
 
-**Permissions:** action row (Edit/Replace/Delete) only renders for Editor (in Spaces where they hold that role) and Admin; Employee sees metadata, the citation list, and Open/Download only.
+**Permissions:** action row (Edit/Replace/Delete) only renders for Editor (in Spaces where they hold that role) and Admin; Employee sees metadata, the citation list, and Open/Download only. Employee never sees this panel's edit form (below) at all — only Editor/Admin can open it.
+
+## Upload / Edit document panel
+
+**One shared form, two entry points**, same slide-over pattern as the rest of the app: "Upload document" (from the Document Library primary button) and "Edit document details" (from the document detail panel's "Edit details" action) render the same panel — title and submit-button label ("Upload" vs "Save changes") swap based on entry point.
+
+**Two content modes when creating a new document** (tabs at the top of the panel, only shown for new uploads — an existing document's mode is fixed once created, so the tabs disappear in Edit):
+
+- **Upload file** — a dropzone (drag-and-drop or click to browse; accepts PDF/DOCX/Markdown up to 25MB).
+- **Write content** — a **Markdown** textarea (monospace, small formatting toolbar: bold, heading, list, code block) for authoring a document directly in the portal, wiki-style, with no underlying file.
+
+**Shared fields below the mode-specific area:** Document name, Category (select), Description (short textarea).
+
+**Status badge** (`Processing` / `Ready` / `Failed`, using the `--status-*` tokens): shown next to the panel title **only in Edit mode**, as a **read-only badge** — the system sets it automatically once RAG indexing runs; there is no dropdown or manual override. A brand-new upload has no badge yet (nothing to show until processing starts after submit).
+
+**Permissions:** this panel is Editor (in Spaces where they hold that role) / Admin only, matching the Document Library's Upload button and the detail panel's Edit action.
 
 ## RAG Assistant ("Ask AI")
 

@@ -16,6 +16,13 @@
   --color-avatar-bg: #1c2033;
   --color-avatar-fg: #ffffff;
 
+  --color-status-ready-bg: #e7f5ec;
+  --color-status-ready-fg: #2f7d5b;
+  --color-status-processing-bg: #fbf0dc;
+  --color-status-processing-fg: #b8860b;
+  --color-status-failed-bg: #fdeaea;
+  --color-status-failed-fg: #c0392b;
+
   --font-display: "Fraunces", serif;
   --font-sans: "Manrope", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -43,4 +50,11 @@
   --color-warn-fg: #e38080;
   --color-avatar-bg: #edebe4;
   --color-avatar-fg: #14161b;
+
+  --color-status-ready-bg: #1b2e22;
+  --color-status-ready-fg: #5fbe8a;
+  --color-status-processing-bg: #2b2415;
+  --color-status-processing-fg: #e3a64a;
+  --color-status-failed-bg: #331a1a;
+  --color-status-failed-fg: #e38080;
 }
