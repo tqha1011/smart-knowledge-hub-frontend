@@ -14,7 +14,4 @@ Dependencies are installed for the intended stack but not yet wired up: `react-r
 
 ## Roles and permissions
 
-Two permission layers, not one flat role — see the design spec for full detail:
-
-- **Global role**: `Admin` / `Editor` / `Employee`.
-- **Per-Space role** (`SpaceMembership.role`): a user's effective permissions can differ per Space (Editor in Space A, viewer-only in Space B). Don't gate UI on global role alone when the feature is Space-scoped (documents, knowledge-gap queue).
+**`Admin` is the only true global role** (a system-wide flag, not tied to any Space). `Editor` and `Employee` are not standalone global roles — they only exist as a per-Space assignment (`SpaceMembership.role`); there's no "Editor" or "Employee" outside the context of a specific Space. A user's permission set is: `isAdmin` (global) + a list of `(Space, role)` pairs. See the design spec for full detail. Don't gate UI on a single global role field when the feature is Space-scoped (documents, knowledge-gap queue) — check the relevant `(Space, role)` pair instead, or `isAdmin` for global actions.

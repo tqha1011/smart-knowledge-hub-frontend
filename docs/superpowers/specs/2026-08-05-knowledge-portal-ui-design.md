@@ -4,7 +4,7 @@
 
 The repo (`WorkSync frontend` scaffolding) is being repurposed for a new product: **Smart Internal Knowledge Portal**, an internal knowledge-management system with an integrated RAG Assistant that answers employee questions from internal documents, with source citations.
 
-This spec covers the **visual design and UI structure** for six pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
+This spec covers the **visual design and UI structure** for seven pieces validated interactively in a brainstorming session (mockups iterated in the visual companion, approved section by section):
 
 1. Portal shell (navigation, responsive behavior)
 2. Document Library page
@@ -12,23 +12,21 @@ This spec covers the **visual design and UI structure** for six pieces validated
 4. Upload / Edit document panel
 5. RAG Assistant ("Ask AI") panel
 6. Login and Set-password (invite acceptance) screens
+7. Users & Roles admin page
 
-Out of scope for this spec (separate sub-projects, to be brainstormed later): Users & Roles admin page, Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
+Out of scope for this spec (separate sub-projects, to be brainstormed later): Space management (create/edit a Space), the aggregate feedback dashboard view, and per-question command-palette shortcuts.
 
 Note: the previous `CLAUDE.md` / `DESIGN.md` (describing a kanban product, "WorkSync") were deleted from the working tree — this spec's design system replaces them; a follow-up task should rewrite `CLAUDE.md`/`DESIGN.md` to describe the actual product once implementation starts.
 
 ## Roles & permissions
 
-Two permission layers, not just one flat role:
-
-- **Global role** — `Admin`, `Editor`, `Employee`.
-- **Per-Space role** (`SpaceMembership.role`) — a user's effective permissions in a given Space can differ from their global role (e.g. Editor in Space A, Employee/viewer-only in Space B).
+**`Admin` is the only true global role.** It's a system-wide flag, not tied to any Space. `Editor` and `Employee` are not standalone global roles — they only exist as a per-Space assignment (`SpaceMembership.role`): there's no such thing as "Editor" or "Employee" outside the context of a specific Space. A user's full permission set is: `isAdmin` (global, usually false) + a list of `(Space, role)` pairs.
 
 Effective behavior:
 
-- **Employee**: read-only — view Spaces they're a member of, search, ask the RAG Assistant, submit feedback on answers.
-- **Editor** (per Space): upload/edit/delete documents in that Space, resolve that Space's knowledge-gap queue (unanswered questions).
-- **Admin** (global): everything Editor can do in every Space, plus manage users, manage Spaces, assign per-Space roles, and view the aggregate dashboard.
+- **Employee** (in a given Space): read-only — view that Space's documents, search, ask the RAG Assistant, submit feedback on answers.
+- **Editor** (in a given Space): upload/edit/delete documents in that Space, resolve that Space's knowledge-gap queue (unanswered questions).
+- **Admin** (global flag): everything Editor can do in every Space, regardless of Space membership, plus manage users, manage Spaces, assign per-Space roles, and view the aggregate dashboard.
 
 **Space** = a knowledge workspace scoped to a department or content group (e.g. Engineering, HR, Sales). A user can belong to multiple Spaces with different roles in each. The shell must include a Space switcher since both content and permissions change per Space.
 
@@ -175,9 +173,24 @@ No version history in this pass (considered and deliberately deferred — not re
 
 Both screens reuse the shell's tokens (`--accent` teal for primary actions and links, `--warn-*` for the error banner, `--accent-soft` for the invite-context banner, Fraunces for the wordmark/heading, Manrope for everything else) — no new tokens needed.
 
+## Users & Roles admin page
+
+**Admin-only** (the shell already hides this nav item for everyone else). Organized the same way as Document Library: a **list page** (all people across the whole org, not Space-scoped) plus a **slide-over detail panel** opened by clicking a row — same interaction pattern reused a third time (Document detail, Ask AI, and now this).
+
+**List columns:** person (avatar, name, email), Admin (a badge — only rendered when true, since `Editor`/`Employee` are per-Space and have no meaningful global display value here), Spaces (one chip per `(Space, role)` pair, e.g. "Engineering · Editor"), Status (`Active` / `Invited` — pending set-password), row action menu. Primary "Invite people" button top-right.
+
+**User detail panel** (click a row): avatar/name/email header, a **"System-wide Admin access" toggle** (on/off, editable — this is the only UI path to promote or demote a user to/from Admin), a **Space memberships** section listing each `(Space, role)` pair as an editable row (Space select + role select + remove), with "+ Add space" to grant access to another Space. Footer has a destructive "Remove user" action plus Cancel/Save.
+
+**Invite panel — supports inviting multiple people in one submission, each independently configured.** This was iterated twice during brainstorming:
+
+1. First pass gave each invitee a repeatable list of Space+role rows (mirroring the detail panel) — rejected as more than needed.
+2. Final: each invitee gets **exactly one** Space + one role, no per-person repeat-add. Only the panel-level "+ Add another person" repeats.
+
+So the panel is a stack of **person cards**, each with its own Email field and a single Space+role pair; a "+ Add another person" button appends another card (each removable except when it's the only one left); the submit button reflects the count ("Send 2 invites"). **No "grant Admin" control here** — every invite is necessarily Editor/Employee via its Space assignment; promoting someone to Admin only happens afterward, from their user detail panel, and only another Admin can do it (this page is Admin-only to begin with).
+
 ## Non-goals for this spec
 
-- Visual design for: Users & Roles admin page, Space creation/management, the feedback-ratio dashboard.
+- Visual design for: Space creation/management, the feedback-ratio dashboard.
 - An embedded in-app file viewer (PDF/doc rendering) — the document detail panel only links out to the original file.
 - Real API/data integration — all mockups use static example content.
 - Accessibility audit beyond baseline (visible focus states, reduced-motion respect) — not yet verified against this spec's components.
