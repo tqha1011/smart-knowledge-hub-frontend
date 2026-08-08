@@ -30,6 +30,10 @@
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 14px;
+
+  /* Portal shell breakpoint: sidebar hides below 980px (icon rail stays);
+     rail hides below Tailwind's default `sm` (640px), replaced by mobile chrome. */
+  --breakpoint-shell: 980px;
 }
 
 /* Dark mode: toggle by adding/removing the `dark` class on <html>.
