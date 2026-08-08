@@ -5,7 +5,6 @@ import { Topbar } from "./Topbar";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
 import { AskAiStubPanel } from "./AskAiStubPanel";
-import { ADMIN_NAV_ITEM, KNOWLEDGE_NAV_ITEMS } from "./navItems";
 import type { ShellNavKey } from "./navItems";
 import {
   mockCurrentUser,
@@ -117,7 +116,3 @@ export function PortalShell() {
     </div>
   );
 }
-
-// Re-exported so IconRail/BottomTabBar's "Documents" defaults stay in sync
-// with the same source of truth as the Sidebar's Knowledge section.
-export { KNOWLEDGE_NAV_ITEMS, ADMIN_NAV_ITEM };
