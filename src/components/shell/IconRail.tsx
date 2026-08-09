@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   ADMIN_NAV_ITEM,
   ASSISTANT_NAV_ICON,
@@ -28,10 +29,14 @@ export function IconRail({
 }: IconRailProps) {
   return (
     <div className="border-border bg-surface hidden w-14 shrink-0 flex-col items-center gap-1 border-r py-4 sm:flex">
-      {/* Product mark */}
-      <span className="bg-accent-soft font-display text-accent mb-3 flex size-8 items-center justify-center rounded-md text-sm font-semibold">
+      {/* Product mark — also doubles as "back to all spaces" */}
+      <Link
+        to="/spaces"
+        aria-label="All spaces"
+        className="bg-accent-soft font-display text-accent mb-3 flex size-8 items-center justify-center rounded-md text-sm font-semibold"
+      >
         K
-      </span>
+      </Link>
 
       {/* Knowledge section icons: Documents, Needs attention */}
       {KNOWLEDGE_NAV_ITEMS.map(({ key, label, icon: Icon }) => (

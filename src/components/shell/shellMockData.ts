@@ -23,3 +23,14 @@ export const mockCurrentUser: CurrentUser = {
 
 // MOCK: stand-in for the selected Space's knowledge-gap queue count.
 export const mockNeedsAttentionCount = 3;
+
+// MOCK: per-space stats shown on the Spaces overview cards — stands in for
+// whatever summary endpoint would back that grid.
+export const mockSpaceStats: Record<
+  string,
+  { documentCount: number; needsAttentionCount: number }
+> = {
+  engineering: { documentCount: 128, needsAttentionCount: 3 },
+  hr: { documentCount: 42, needsAttentionCount: 0 },
+  sales: { documentCount: 76, needsAttentionCount: 1 },
+};
