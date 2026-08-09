@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import type { ShellNavKey } from "./navItems";
@@ -59,9 +60,15 @@ export function MobileNavDrawer({
             className="bg-surface absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col p-4 shadow-lg"
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="bg-accent-soft font-display text-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold">
+              {/* Product mark — also doubles as "back to all spaces" */}
+              <Link
+                to="/spaces"
+                onClick={onClose}
+                aria-label="All spaces"
+                className="bg-accent-soft font-display text-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
+              >
                 K
-              </span>
+              </Link>
               <button
                 type="button"
                 onClick={onClose}
