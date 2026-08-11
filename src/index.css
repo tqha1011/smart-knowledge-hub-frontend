@@ -62,3 +62,11 @@
   --color-status-failed-bg: #331a1a;
   --color-status-failed-fg: #e38080;
 }
+
+/* Matches the page's own bg-bg so route transitions never flash the
+   browser's default background during the brief moment both the exiting
+   and entering page are at opacity 0. */
+html,
+body {
+  background-color: var(--color-bg);
+}
