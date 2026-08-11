@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { IconRail } from "./IconRail";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -7,9 +8,11 @@ import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
 import { AskAiStubPanel } from "./AskAiStubPanel";
 import type { ShellNavKey } from "./navItems";
-import { mockCurrentUser, mockNeedsAttentionCount } from "./shellMockData";
+import { mockCurrentUser, mockKnowledgeGaps } from "./shellMockData";
+import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
+import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { PageTransition } from "../common/PageTransition";
-import type { Space } from "../../types";
+import type { KnowledgeGapItem, Space } from "../../types";
 
 const NAV_PAGE_TITLE: Record<ShellNavKey, string> = {
   documents: "Documents",
@@ -37,10 +40,44 @@ export function PortalShell() {
   const membership = currentUser.memberships.find(
     (m) => m.space.id === spaceId,
   );
+
+  // Lifted here (not into DocumentLibrary) because the gap count also
+  // feeds the sidebar/rail/mobile-drawer badges, which are siblings of
+  // DocumentLibrary, not descendants. A fresh PortalShell mount (Space
+  // switches remount this component via the router key) reseeds from mock
+  // data, same pattern as mockCurrentUser elsewhere in this codebase.
+  // NOTE: initialized from `membership?.space.id` (not `selectedSpace.id`)
+  // and declared above the `if (!membership)` early return below — hooks
+  // can't be called conditionally, so this can't sit after that guard.
+  const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapItem[]>(() =>
+    mockKnowledgeGaps.filter((gap) => gap.spaceId === membership?.space.id),
+  );
+  const needsAttentionCount = knowledgeGaps.length;
+
   if (!membership) {
     return <Navigate to="/spaces" replace />;
   }
   const selectedSpace = membership.space;
+
+  const canManageDocuments =
+    currentUser.isAdmin || membership.role === "Editor";
+
+  const handleResolveGap = (id: string) => {
+    setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
+    toast.success("Marked resolved.");
+  };
+
+  const handleIgnoreGap = (id: string) => {
+    setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
+    toast.info("Question ignored.");
+  };
+
+  const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
+    setActiveNavKey(
+      tab === "needs-attention" ? "needs-attention" : "documents",
+    );
+  };
+
   const handleSelectSpace = (space: Space) => navigate(`/spaces/${space.id}`);
 
   return (
@@ -52,7 +89,7 @@ export function PortalShell() {
             activeNavKey={activeNavKey}
             onNavigate={setActiveNavKey}
             isAdmin={currentUser.isAdmin}
-            needsAttentionCount={mockNeedsAttentionCount}
+            needsAttentionCount={needsAttentionCount}
             isAskAiOpen={isAskAiOpen}
             onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}
           />
@@ -64,7 +101,7 @@ export function PortalShell() {
             onSelectSpace={handleSelectSpace}
             activeNavKey={activeNavKey}
             onNavigate={setActiveNavKey}
-            needsAttentionCount={mockNeedsAttentionCount}
+            needsAttentionCount={needsAttentionCount}
             isAskAiOpen={isAskAiOpen}
             onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}
           />
@@ -75,23 +112,37 @@ export function PortalShell() {
               onOpenMobileNav={() => setIsMobileNavOpen(true)}
             />
 
-            {/* Main content area — placeholder pane standing in for the routed page */}
+            {/* Main content area */}
             <main className="flex-1 overflow-y-auto p-6 pb-24 sm:pb-6">
-              <p className="text-ink-muted mb-1 font-mono text-xs tracking-wide uppercase">
-                {/* MOCK: subtitle format follows the spec's "{Space} · ..." pattern, count is a stand-in */}
-                {selectedSpace.name} · placeholder content
-              </p>
-              <h1 className="font-display text-ink text-3xl font-semibold">
-                {NAV_PAGE_TITLE[activeNavKey]}
-              </h1>
-              <div className="border-border text-ink-muted mt-6 flex min-h-64 items-center justify-center rounded-lg border border-dashed text-center text-sm">
-                {activeNavKey === "documents" &&
-                  "Document Library UI is spec piece 2 — not built yet."}
-                {activeNavKey === "needs-attention" &&
-                  "Needs attention (knowledge-gap queue) UI is spec piece 2 — not built yet."}
-                {activeNavKey === "users-roles" &&
-                  "Users & Roles admin UI is spec piece 7 — not built yet."}
-              </div>
+              {(activeNavKey === "documents" ||
+                activeNavKey === "needs-attention") && (
+                <DocumentLibrary
+                  space={selectedSpace}
+                  canManage={canManageDocuments}
+                  activeTab={
+                    activeNavKey === "needs-attention"
+                      ? "needs-attention"
+                      : "all"
+                  }
+                  onTabChange={handleLibraryTabChange}
+                  knowledgeGaps={knowledgeGaps}
+                  onResolveGap={handleResolveGap}
+                  onIgnoreGap={handleIgnoreGap}
+                />
+              )}
+              {activeNavKey === "users-roles" && (
+                <>
+                  <p className="text-ink-muted mb-1 font-mono text-xs tracking-wide uppercase">
+                    {selectedSpace.name} · placeholder content
+                  </p>
+                  <h1 className="font-display text-ink text-3xl font-semibold">
+                    {NAV_PAGE_TITLE[activeNavKey]}
+                  </h1>
+                  <div className="border-border text-ink-muted mt-6 flex min-h-64 items-center justify-center rounded-lg border border-dashed text-center text-sm">
+                    Users & Roles admin UI is spec piece 7 — not built yet.
+                  </div>
+                </>
+              )}
             </main>
           </div>
         </div>
@@ -105,7 +156,7 @@ export function PortalShell() {
           onSelectSpace={handleSelectSpace}
           activeNavKey={activeNavKey}
           onNavigate={setActiveNavKey}
-          needsAttentionCount={mockNeedsAttentionCount}
+          needsAttentionCount={needsAttentionCount}
           isAskAiOpen={isAskAiOpen}
           onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}
         />
