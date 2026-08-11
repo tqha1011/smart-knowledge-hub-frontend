@@ -114,6 +114,7 @@ export function DocumentLibrary({
         <DocumentTable
           documents={filteredDocuments}
           onOpenDocument={handleOpenDocument}
+          canManage={canManage}
         />
       ) : (
         <NeedsAttentionList

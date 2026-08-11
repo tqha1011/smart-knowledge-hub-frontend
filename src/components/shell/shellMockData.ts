@@ -26,20 +26,6 @@ export const mockCurrentUser: CurrentUser = {
   ],
 };
 
-// MOCK: stand-in for the selected Space's knowledge-gap queue count.
-export const mockNeedsAttentionCount = 3;
-
-// MOCK: per-space stats shown on the Spaces overview cards — stands in for
-// whatever summary endpoint would back that grid.
-export const mockSpaceStats: Record<
-  string,
-  { documentCount: number; needsAttentionCount: number }
-> = {
-  engineering: { documentCount: 128, needsAttentionCount: 3 },
-  hr: { documentCount: 42, needsAttentionCount: 0 },
-  sales: { documentCount: 76, needsAttentionCount: 1 },
-};
-
 // MOCK: stand-in for `GET /spaces/:spaceId/documents`.
 export const mockDocuments: DocumentSummary[] = [
   {
@@ -113,6 +99,28 @@ export const mockDocuments: DocumentSummary[] = [
     citationCount: 19,
   },
 ];
+
+function countDocuments(spaceId: string): number {
+  return mockDocuments.filter((doc) => doc.spaceId === spaceId).length;
+}
+
+// MOCK: per-space stats shown on the Spaces overview cards — stands in for
+// whatever summary endpoint would back that grid. documentCount is derived
+// from mockDocuments so the two can't drift out of sync.
+export const mockSpaceStats: Record<
+  string,
+  { documentCount: number; needsAttentionCount: number }
+> = {
+  engineering: {
+    documentCount: countDocuments("engineering"),
+    needsAttentionCount: 3,
+  },
+  hr: { documentCount: countDocuments("hr"), needsAttentionCount: 0 },
+  sales: {
+    documentCount: countDocuments("sales"),
+    needsAttentionCount: 1,
+  },
+};
 
 // MOCK: stand-in for `GET /spaces/:spaceId/knowledge-gaps`. Counts per
 // spaceId intentionally match mockSpaceStats[spaceId].needsAttentionCount.

@@ -4,6 +4,8 @@ import type { DocumentFileType, DocumentSummary } from "../../types";
 interface DocumentTableProps {
   documents: DocumentSummary[];
   onOpenDocument: (doc: DocumentSummary) => void;
+  /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
+  canManage: boolean;
 }
 
 const FILE_TYPE_ICON: Record<DocumentFileType, typeof FileText> = {
@@ -32,6 +34,7 @@ function formatRelativeDate(iso: string): string {
 export function DocumentTable({
   documents,
   onOpenDocument,
+  canManage,
 }: DocumentTableProps) {
   if (documents.length === 0) {
     return (
@@ -69,7 +72,7 @@ export function DocumentTable({
                   <button
                     type="button"
                     onClick={() => onOpenDocument(doc)}
-                    className="text-ink flex items-center gap-2 text-left font-medium"
+                    className="text-ink flex min-w-0 items-center gap-2 text-left font-medium"
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
                     <span className="truncate">{doc.name}</span>
@@ -81,7 +84,7 @@ export function DocumentTable({
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 lg:table-cell">
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span className="bg-avatar-bg text-avatar-fg flex size-6 items-center justify-center rounded-full text-[10px] font-semibold">
                       {doc.updatedBy.avatarInitials}
                     </span>
@@ -99,14 +102,16 @@ export function DocumentTable({
                   </span>
                 </td>
                 <td className="px-2 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onOpenDocument(doc)}
-                    aria-label={`Actions for ${doc.name}`}
-                    className="text-ink-muted hover:bg-surface flex size-8 items-center justify-center rounded-md"
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenDocument(doc)}
+                      aria-label={`Actions for ${doc.name}`}
+                      className="text-ink-muted hover:bg-surface flex size-8 items-center justify-center rounded-md"
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                  )}
                 </td>
               </tr>
             );
