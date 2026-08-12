@@ -113,6 +113,23 @@ export function DocumentLibrary({
     setIsDetailPanelOpen(false);
   };
 
+  // Clear the active category filter on a successful create/update so the
+  // mutated document is guaranteed visible — otherwise a stale filter can
+  // hide a just-created doc, or leave an edited doc's old category with no
+  // matching documents (a misleading "empty" table).
+  const handleFormCreate = (input: NewDocumentInput) => {
+    onCreateDocument(input);
+    setActiveCategory(null);
+  };
+
+  const handleFormUpdate = (
+    documentId: string,
+    updates: DocumentUpdateInput,
+  ) => {
+    onUpdateDocument(documentId, updates);
+    setActiveCategory(null);
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -208,8 +225,8 @@ export function DocumentLibrary({
         document={formPanelDocument}
         categories={categories}
         onClose={handleCloseFormPanel}
-        onCreate={onCreateDocument}
-        onUpdate={onUpdateDocument}
+        onCreate={handleFormCreate}
+        onUpdate={handleFormUpdate}
       />
     </div>
   );
