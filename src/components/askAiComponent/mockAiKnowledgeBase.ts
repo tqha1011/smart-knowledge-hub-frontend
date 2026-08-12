@@ -21,31 +21,34 @@ const mockAiAnswers: AiAnswerEntry[] = [
     documentIds: ["doc-1"],
   },
   {
-    keywords: [
-      "incident",
-      "escalation",
-      "sev1",
-      "outage",
-      "on-call",
-      "rollback",
-    ],
+    keywords: ["incident", "escalation", "sev1", "outage"],
     answerText:
       "If a Sev1 alert fires, page the on-call engineer first and open an incident channel within 5 minutes {{1}}. Don't declare an incident resolved until the error rate has stayed below threshold for a full monitoring window, not just the moment metrics first dip back down {{1}}.",
     documentIds: ["doc-2"],
   },
   {
-    keywords: ["pto", "time off", "vacation", "leave", "rollover"],
+    keywords: ["pto", "time off", "vacation", "leave policy", "rollover"],
     answerText:
       "New hires accrue PTO starting their first pay period, and up to 5 unused days can roll over into the next calendar year — anything beyond that is forfeited {{1}}.",
     documentIds: ["doc-5"],
   },
   {
-    keywords: ["discount", "pricing", "contract", "annual", "multi-year"],
+    keywords: ["discount range", "pricing", "contract", "annual"],
     answerText:
       "Standard annual contracts support up to a 15% discount without approval; anything deeper needs sales-leadership sign-off {{1}}. Add-on seats added mid-contract are prorated at the same per-seat rate as the original agreement {{1}}.",
     documentIds: ["doc-7"],
   },
 ];
+
+// Word-boundary-aware keyword match (not naive substring) so a keyword
+// like "pto" doesn't match inside "crypto", "contract" doesn't match
+// "contractor", etc. Keywords may contain internal hyphens/spaces (e.g.
+// "discount range"), so the boundary is applied around the whole keyword
+// string rather than splitting on \s.
+function keywordMatches(question: string, keyword: string): boolean {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`, "i").test(question);
+}
 
 // Returns a low-confidence AssistantAnswer (empty citations) when no
 // keyword matches, OR when every cited document falls outside the
@@ -56,9 +59,8 @@ export function findAnswer(
   accessibleSpaceIds: string[],
   currentSpaceName: string,
 ): AssistantAnswer {
-  const lowerQuestion = question.toLowerCase();
   const matchedEntry = mockAiAnswers.find((entry) =>
-    entry.keywords.some((keyword) => lowerQuestion.includes(keyword)),
+    entry.keywords.some((keyword) => keywordMatches(question, keyword)),
   );
 
   if (matchedEntry) {
