@@ -4,8 +4,9 @@ import { toast } from "react-toastify";
 import { CategoryFilterChips } from "./CategoryFilterChips";
 import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
-import { mockDocuments } from "../shell/shellMockData";
-import type { KnowledgeGapItem, Space } from "../../types";
+import { DocumentDetailPanel } from "./DocumentDetailPanel";
+import { mockDocuments, mockDocumentCitations } from "../shell/shellMockData";
+import type { DocumentSummary, KnowledgeGapItem, Space } from "../../types";
 
 export type DocumentLibraryTab = "all" | "needs-attention";
 
@@ -22,9 +23,9 @@ interface DocumentLibraryProps {
 
 // Page structure per spec: title + subtitle + Upload button, tabs, category
 // chips (table view only), then either the document table or the
-// knowledge-gap queue. Document creation/edit/detail are separate pieces
-// (Upload/Edit panel, Document detail panel) — not built yet, so the
-// actions that would open them are toast stubs here.
+// knowledge-gap queue. Row clicks open the Document detail panel (this
+// piece). Document creation/edit are a separate piece (Upload/Edit panel)
+// not built yet, so the actions that would open that panel are toast stubs.
 export function DocumentLibrary({
   space,
   canManage,
@@ -36,7 +37,18 @@ export function DocumentLibrary({
 }: DocumentLibraryProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const documents = mockDocuments.filter((doc) => doc.spaceId === space.id);
+  // Local state (not a derived const) because Delete below needs to
+  // actually remove an entry. Seeded once at mount — Space switches
+  // remount this whole component via PortalShell's router key, same
+  // reasoning as PortalShell's own knowledgeGaps state.
+  const [documents, setDocuments] = useState<DocumentSummary[]>(() =>
+    mockDocuments.filter((doc) => doc.spaceId === space.id),
+  );
+
+  const [selectedDocument, setSelectedDocument] =
+    useState<DocumentSummary | null>(null);
+  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+
   const categories = Array.from(
     new Set(documents.map((doc) => doc.category)),
   ).sort();
@@ -44,8 +56,37 @@ export function DocumentLibrary({
     ? documents.filter((doc) => doc.category === activeCategory)
     : documents;
 
-  const handleOpenDocument = () => {
-    toast.info("Document detail panel isn't built yet.");
+  const citationsForSelected = selectedDocument
+    ? mockDocumentCitations.filter(
+        (citation) => citation.documentId === selectedDocument.id,
+      )
+    : [];
+
+  const handleOpenDocument = (doc: DocumentSummary) => {
+    setSelectedDocument(doc);
+    setIsDetailPanelOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailPanelOpen(false);
+  };
+
+  const handleOpenFile = () => {
+    toast.info("Opening the file isn't wired to a backend yet.");
+  };
+
+  const handleEditDetails = () => {
+    toast.info("Edit document panel isn't built yet.");
+  };
+
+  const handleReplaceFile = () => {
+    toast.info("Replace file isn't built yet.");
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    setIsDetailPanelOpen(false);
+    toast.success("Document deleted.");
   };
 
   return (
@@ -124,6 +165,19 @@ export function DocumentLibrary({
           onIgnore={onIgnoreGap}
         />
       )}
+
+      <DocumentDetailPanel
+        document={selectedDocument}
+        isOpen={isDetailPanelOpen}
+        space={space}
+        canManage={canManage}
+        citations={citationsForSelected}
+        onClose={handleCloseDetail}
+        onOpenFile={handleOpenFile}
+        onEditDetails={handleEditDetails}
+        onReplaceFile={handleReplaceFile}
+        onDelete={handleDeleteDocument}
+      />
     </div>
   );
 }
