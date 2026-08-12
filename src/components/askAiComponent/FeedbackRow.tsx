@@ -13,6 +13,12 @@ interface FeedbackRowProps {
 // submits the down-vote. Once a vote lands, the row collapses to a
 // short acknowledgement instead of showing the buttons again.
 export function FeedbackRow({ vote, onSubmit }: FeedbackRowProps) {
+  // Deliberately local, not lifted to AskAiPanel: an in-progress
+  // (unsubmitted) feedback comment is lost if the panel closes before
+  // "Send feedback" is clicked. Accepted limitation — the alternative
+  // (keying draft state by message id one level up) adds real complexity
+  // for an edge case narrower than the panel's core "conversation
+  // survives close/reopen" guarantee.
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [comment, setComment] = useState("");
 
