@@ -35,7 +35,7 @@ export function AssistantMessageBubble({
   const { answer } = message;
 
   return (
-    <div className="mr-auto max-w-[85%]">
+    <div className="mr-auto w-fit max-w-[85%]">
       <div className="bg-surface-sunken text-ink rounded-lg rounded-tl-sm px-3 py-2 text-sm">
         <p>{renderAnswerText(answer.text)}</p>
         {answer.citations.length > 0 && (
