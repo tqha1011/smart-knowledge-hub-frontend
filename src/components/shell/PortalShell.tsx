@@ -105,13 +105,13 @@ export function PortalShell() {
         );
       }
       return [
-        ...prev,
         {
           id: `gap-${Date.now()}`,
           spaceId: selectedSpace.id,
           question,
           askedCount: 1,
         },
+        ...prev,
       ];
     });
   };
