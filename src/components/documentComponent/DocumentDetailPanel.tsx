@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Download, Pencil, RefreshCw, Trash2, X } from "lucide-react";
 import type { DocumentCitation, DocumentSummary, Space } from "../../types";
@@ -89,6 +90,7 @@ function DocumentDetailPanelBody({
   prefersReducedMotion,
 }: DocumentDetailPanelBodyProps) {
   const FileIcon = FILE_TYPE_ICON[document.fileType];
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   return (
     <div className="fixed inset-0 z-40">
@@ -200,14 +202,34 @@ function DocumentDetailPanelBody({
                   Replace file
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => onDelete(document.id)}
-                className="bg-warn-bg text-warn-fg mt-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
-              >
-                <Trash2 size={14} />
-                Delete
-              </button>
+              {isConfirmingDelete ? (
+                <div className="mt-1 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(false)}
+                    className="border-border text-ink hover:bg-surface-sunken flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(document.id)}
+                    className="bg-warn-bg text-warn-fg flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
+                  >
+                    <Trash2 size={14} />
+                    Confirm delete
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="bg-warn-bg text-warn-fg mt-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              )}
             </>
           )}
         </div>
