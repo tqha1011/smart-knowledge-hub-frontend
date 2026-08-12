@@ -1,5 +1,6 @@
 import type {
   CurrentUser,
+  DocumentCitation,
   DocumentSummary,
   KnowledgeGapItem,
   Space,
@@ -26,6 +27,99 @@ export const mockCurrentUser: CurrentUser = {
   ],
 };
 
+// MOCK: stand-in for `GET /documents/:documentId/citations`. Backs the
+// Document detail panel's "Cited by the Assistant" list. Each document's
+// citationCount below is the sum of askedCount across its entries here.
+// Declared before mockDocuments (not after) because mockDocuments calls
+// countCitations() at module-evaluation time, and a `const` isn't
+// initialized until its own declaration line runs — declaring it later
+// would throw "Cannot access before initialization".
+export const mockDocumentCitations: DocumentCitation[] = [
+  {
+    id: "cite-1",
+    documentId: "doc-1",
+    question: "What's the correct pagination pattern for list endpoints?",
+    askedCount: 7,
+    lastAskedAt: "2026-08-09T14:20:00Z",
+  },
+  {
+    id: "cite-2",
+    documentId: "doc-1",
+    question: "How do we version breaking API changes?",
+    askedCount: 5,
+    lastAskedAt: "2026-08-06T11:05:00Z",
+  },
+  {
+    id: "cite-3",
+    documentId: "doc-2",
+    question: "What's the escalation path when a Sev1 alert fires at night?",
+    askedCount: 16,
+    lastAskedAt: "2026-08-11T02:40:00Z",
+  },
+  {
+    id: "cite-4",
+    documentId: "doc-2",
+    question: "How long do we wait before declaring an incident resolved?",
+    askedCount: 11,
+    lastAskedAt: "2026-08-07T16:15:00Z",
+  },
+  {
+    id: "cite-5",
+    documentId: "doc-3",
+    question: "What do I need to set up on day one?",
+    askedCount: 4,
+    lastAskedAt: "2026-06-20T09:00:00Z",
+  },
+  {
+    id: "cite-6",
+    documentId: "doc-4",
+    question: "How does the canary rollout stage work?",
+    askedCount: 8,
+    lastAskedAt: "2026-08-10T08:30:00Z",
+  },
+  {
+    id: "cite-7",
+    documentId: "doc-5",
+    question: "How many PTO days do new hires accrue in year one?",
+    askedCount: 9,
+    lastAskedAt: "2026-07-30T10:00:00Z",
+  },
+  {
+    id: "cite-8",
+    documentId: "doc-5",
+    question: "Can unused PTO roll over to the next year?",
+    askedCount: 6,
+    lastAskedAt: "2026-07-15T13:45:00Z",
+  },
+  {
+    id: "cite-9",
+    documentId: "doc-6",
+    question: "What paperwork does a new hire need to complete before day one?",
+    askedCount: 6,
+    lastAskedAt: "2026-08-03T09:10:00Z",
+  },
+  {
+    id: "cite-10",
+    documentId: "doc-7",
+    question: "What's the standard discount range for annual contracts?",
+    askedCount: 12,
+    lastAskedAt: "2026-08-11T15:00:00Z",
+  },
+  {
+    id: "cite-11",
+    documentId: "doc-7",
+    question: "How do we price add-on seats mid-contract?",
+    askedCount: 7,
+    lastAskedAt: "2026-08-05T12:20:00Z",
+  },
+];
+
+function countCitations(documentId: string): number {
+  return mockDocumentCitations
+    .filter((citation) => citation.documentId === documentId)
+    .reduce((sum, citation) => sum + citation.askedCount, 0);
+}
+
 // MOCK: stand-in for `GET /spaces/:spaceId/documents`.
 export const mockDocuments: DocumentSummary[] = [
   {
@@ -36,7 +130,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Architecture",
     updatedBy: { name: "Priya Nair", avatarInitials: "PN" },
     updatedAt: "2026-08-05T10:00:00Z",
-    citationCount: 12,
+    fileSizeBytes: 842432,
+    citationCount: countCitations("doc-1"),
   },
   {
     id: "doc-2",
@@ -46,7 +141,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Runbook",
     updatedBy: { name: "Alex Rivera", avatarInitials: "AR" },
     updatedAt: "2026-07-28T10:00:00Z",
-    citationCount: 27,
+    fileSizeBytes: 128540,
+    citationCount: countCitations("doc-2"),
   },
   {
     id: "doc-3",
@@ -56,7 +152,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Onboarding",
     updatedBy: { name: "Priya Nair", avatarInitials: "PN" },
     updatedAt: "2026-06-14T10:00:00Z",
-    citationCount: 4,
+    fileSizeBytes: 305152,
+    citationCount: countCitations("doc-3"),
   },
   {
     id: "doc-4",
@@ -66,7 +163,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Architecture",
     updatedBy: { name: "Sam Ortiz", avatarInitials: "SO" },
     updatedAt: "2026-08-09T10:00:00Z",
-    citationCount: 8,
+    fileSizeBytes: 1887436,
+    citationCount: countCitations("doc-4"),
   },
   {
     id: "doc-5",
@@ -76,7 +174,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Policy",
     updatedBy: { name: "Jordan Lee", avatarInitials: "JL" },
     updatedAt: "2026-07-01T10:00:00Z",
-    citationCount: 15,
+    fileSizeBytes: 412672,
+    citationCount: countCitations("doc-5"),
   },
   {
     id: "doc-6",
@@ -86,7 +185,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Onboarding",
     updatedBy: { name: "Jordan Lee", avatarInitials: "JL" },
     updatedAt: "2026-08-02T10:00:00Z",
-    citationCount: 6,
+    fileSizeBytes: 256000,
+    citationCount: countCitations("doc-6"),
   },
   {
     id: "doc-7",
@@ -96,7 +196,8 @@ export const mockDocuments: DocumentSummary[] = [
     category: "Playbook",
     updatedBy: { name: "Morgan Diaz", avatarInitials: "MD" },
     updatedAt: "2026-08-10T10:00:00Z",
-    citationCount: 19,
+    fileSizeBytes: 2202009,
+    citationCount: countCitations("doc-7"),
   },
 ];
 
