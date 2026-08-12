@@ -9,9 +9,9 @@ interface NeedsAttentionListProps {
   onIgnore: (id: string) => void;
 }
 
-// The knowledge-gap queue: questions the (not yet built) RAG Assistant
+// The knowledge-gap queue: questions the RAG Assistant (Ask AI panel)
 // couldn't confidently answer. Deliberately a separate list from answer
-// feedback (thumbs up/down) per spec — the two are never merged here.
+// feedback per spec — the two are never merged here.
 export function NeedsAttentionList({
   items,
   canManage,

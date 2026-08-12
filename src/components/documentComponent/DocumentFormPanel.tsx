@@ -25,7 +25,7 @@ interface DocumentFormPanelProps {
 
 // Floating slide-over panel (480px, right-aligned — wider than the 420px
 // Document detail panel since this one holds a dropzone/editor plus three
-// more fields), same pattern as DocumentDetailPanel/AskAiStubPanel. One
+// more fields), same pattern as DocumentDetailPanel/AskAiPanel. One
 // shared form backs two entry points per spec: "Upload document" (from
 // Document Library) and "Edit document details" (from the Document detail
 // panel's "Edit details" action) — title, submit label, and which fields

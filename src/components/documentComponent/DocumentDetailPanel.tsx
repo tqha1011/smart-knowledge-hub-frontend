@@ -24,7 +24,7 @@ interface DocumentDetailPanelProps {
 }
 
 // Floating slide-over panel (420px, right-aligned), same pattern as
-// AskAiStubPanel — dims/blurs the page behind it, closes back to exactly
+// AskAiPanel — dims/blurs the page behind it, closes back to exactly
 // where the user was. Metadata + actions only, no embedded file preview
 // (spec deliberately defers a PDF/doc viewer) and no version history.
 export function DocumentDetailPanel({
