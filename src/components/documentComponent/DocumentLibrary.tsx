@@ -5,7 +5,7 @@ import { CategoryFilterChips } from "./CategoryFilterChips";
 import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
-import { mockDocuments, mockDocumentCitations } from "../shell/shellMockData";
+import { mockDocumentCitations } from "../shell/shellMockData";
 import type { DocumentSummary, KnowledgeGapItem, Space } from "../../types";
 
 export type DocumentLibraryTab = "all" | "needs-attention";
@@ -16,6 +16,8 @@ interface DocumentLibraryProps {
   canManage: boolean;
   activeTab: DocumentLibraryTab;
   onTabChange: (tab: DocumentLibraryTab) => void;
+  documents: DocumentSummary[];
+  onDeleteDocument: (documentId: string) => void;
   knowledgeGaps: KnowledgeGapItem[];
   onResolveGap: (id: string) => void;
   onIgnoreGap: (id: string) => void;
@@ -31,19 +33,13 @@ export function DocumentLibrary({
   canManage,
   activeTab,
   onTabChange,
+  documents,
+  onDeleteDocument,
   knowledgeGaps,
   onResolveGap,
   onIgnoreGap,
 }: DocumentLibraryProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-
-  // Local state (not a derived const) because Delete below needs to
-  // actually remove an entry. Seeded once at mount — Space switches
-  // remount this whole component via PortalShell's router key, same
-  // reasoning as PortalShell's own knowledgeGaps state.
-  const [documents, setDocuments] = useState<DocumentSummary[]>(() =>
-    mockDocuments.filter((doc) => doc.spaceId === space.id),
-  );
 
   const [selectedDocument, setSelectedDocument] =
     useState<DocumentSummary | null>(null);
@@ -84,9 +80,8 @@ export function DocumentLibrary({
   };
 
   const handleDeleteDocument = (documentId: string) => {
-    setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    onDeleteDocument(documentId);
     setIsDetailPanelOpen(false);
-    toast.success("Document deleted.");
   };
 
   return (

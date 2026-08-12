@@ -8,11 +8,15 @@ import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
 import { AskAiStubPanel } from "./AskAiStubPanel";
 import type { ShellNavKey } from "./navItems";
-import { mockCurrentUser, mockKnowledgeGaps } from "./shellMockData";
+import {
+  mockCurrentUser,
+  mockDocuments,
+  mockKnowledgeGaps,
+} from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { PageTransition } from "../common/PageTransition";
-import type { KnowledgeGapItem, Space } from "../../types";
+import type { DocumentSummary, KnowledgeGapItem, Space } from "../../types";
 
 const NAV_PAGE_TITLE: Record<ShellNavKey, string> = {
   documents: "Documents",
@@ -54,6 +58,15 @@ export function PortalShell() {
   );
   const needsAttentionCount = knowledgeGaps.length;
 
+  // Same lifted-state pattern as knowledgeGaps above: DocumentLibrary is
+  // conditionally rendered (unmounts when the user navigates to a sibling
+  // nav item like Users & Roles), so the document list must live here, not
+  // as DocumentLibrary's own local state, or a Delete gets silently undone
+  // on an unmount/remount round-trip.
+  const [documents, setDocuments] = useState<DocumentSummary[]>(() =>
+    mockDocuments.filter((doc) => doc.spaceId === membership?.space.id),
+  );
+
   if (!membership) {
     return <Navigate to="/spaces" replace />;
   }
@@ -70,6 +83,11 @@ export function PortalShell() {
   const handleIgnoreGap = (id: string) => {
     setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
     toast.info("Question ignored.");
+  };
+
+  const handleDeleteDocument = (documentId: string) => {
+    setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+    toast.success("Document deleted.");
   };
 
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
@@ -125,6 +143,8 @@ export function PortalShell() {
                       : "all"
                   }
                   onTabChange={handleLibraryTabChange}
+                  documents={documents}
+                  onDeleteDocument={handleDeleteDocument}
                   knowledgeGaps={knowledgeGaps}
                   onResolveGap={handleResolveGap}
                   onIgnoreGap={handleIgnoreGap}
