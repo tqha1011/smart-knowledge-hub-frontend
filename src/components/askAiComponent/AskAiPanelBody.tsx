@@ -21,8 +21,8 @@ interface AskAiPanelBodyProps {
 }
 
 // Floating slide-over panel's visual chrome (440px, right-aligned), same
-// pattern as AskAiStubPanel/DocumentDetailPanel/DocumentFormPanel. Unlike
-// those two document panels, this component owns no conversation state
+// pattern as DocumentDetailPanel/DocumentFormPanel. Unlike those two
+// document panels, this component owns no conversation state
 // itself — AskAiPanel (Task 6) keeps `messages` alive across close/reopen
 // by never unmounting it; only this chrome mounts/unmounts per open.
 export function AskAiPanelBody({
@@ -104,7 +104,7 @@ export function AskAiPanelBody({
               ),
             )
           )}
-          <div ref={threadEndRef} />
+          {messages.length > 0 && <div ref={threadEndRef} />}
         </div>
 
         <form
