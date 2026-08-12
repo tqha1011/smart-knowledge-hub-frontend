@@ -6,7 +6,7 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
-import { AskAiStubPanel } from "./AskAiStubPanel";
+import { AskAiPanel } from "../askAiComponent/AskAiPanel";
 import type { ShellNavKey } from "./navItems";
 import {
   mockCurrentUser,
@@ -80,6 +80,7 @@ export function PortalShell() {
 
   const canManageDocuments =
     currentUser.isAdmin || membership.role === "Editor";
+  const accessibleSpaceIds = currentUser.memberships.map((m) => m.space.id);
 
   const handleResolveGap = (id: string) => {
     setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
@@ -89,6 +90,30 @@ export function PortalShell() {
   const handleIgnoreGap = (id: string) => {
     setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
     toast.info("Question ignored.");
+  };
+
+  const handleLogKnowledgeGap = (question: string) => {
+    setKnowledgeGaps((prev) => {
+      const existing = prev.find(
+        (gap) => gap.question.toLowerCase() === question.toLowerCase(),
+      );
+      if (existing) {
+        return prev.map((gap) =>
+          gap.id === existing.id
+            ? { ...gap, askedCount: gap.askedCount + 1 }
+            : gap,
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: `gap-${Date.now()}`,
+          spaceId: selectedSpace.id,
+          question,
+          askedCount: 1,
+        },
+      ];
+    });
   };
 
   const handleDeleteDocument = (documentId: string) => {
@@ -242,11 +267,14 @@ export function PortalShell() {
           onOpenMobileNav={() => setIsMobileNavOpen(true)}
         />
 
-        {/* Ask AI floating panel stub — spec piece 5, chrome only */}
-        <AskAiStubPanel
+        {/* Ask AI floating panel — spec piece 5 */}
+        <AskAiPanel
           isOpen={isAskAiOpen}
           onClose={() => setIsAskAiOpen(false)}
           spaceCount={currentUser.memberships.length}
+          accessibleSpaceIds={accessibleSpaceIds}
+          selectedSpaceName={selectedSpace.name}
+          onLogKnowledgeGap={handleLogKnowledgeGap}
         />
       </div>
     </PageTransition>
