@@ -5,6 +5,7 @@ export type {
   DocumentFileType,
   DocumentSummary,
   KnowledgeGapItem,
+  DocumentCitation,
 } from "./commonType/document";
 export type {
   LoginDto,
