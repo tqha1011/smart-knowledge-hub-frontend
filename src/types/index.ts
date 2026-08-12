@@ -11,6 +11,14 @@ export type {
   DocumentUpdateInput,
 } from "./commonType/document";
 export type {
+  AskAiCitation,
+  FeedbackVote,
+  AssistantAnswer,
+  UserChatMessage,
+  AssistantChatMessage,
+  ChatMessage,
+} from "./commonType/askAi";
+export type {
   LoginDto,
   SetPasswordDto,
   InviteContextDto,
