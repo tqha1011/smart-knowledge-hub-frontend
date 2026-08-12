@@ -128,6 +128,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "API Design Guidelines.pdf",
     fileType: "pdf",
     category: "Architecture",
+    description:
+      "Guidelines for designing consistent, versioned REST APIs across services.",
+    status: "ready",
     updatedBy: { name: "Priya Nair", avatarInitials: "PN" },
     updatedAt: "2026-08-05T10:00:00Z",
     fileSizeBytes: 842432,
@@ -139,6 +142,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "Incident Response Runbook.md",
     fileType: "markdown",
     category: "Runbook",
+    description:
+      "Step-by-step runbook for triaging and resolving production incidents.",
+    status: "ready",
     updatedBy: { name: "Alex Rivera", avatarInitials: "AR" },
     updatedAt: "2026-07-28T10:00:00Z",
     fileSizeBytes: 128540,
@@ -150,6 +156,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "Onboarding Checklist.docx",
     fileType: "docx",
     category: "Onboarding",
+    description:
+      "Checklist covering account setup and first-week tasks for new engineers.",
+    status: "ready",
     updatedBy: { name: "Priya Nair", avatarInitials: "PN" },
     updatedAt: "2026-06-14T10:00:00Z",
     fileSizeBytes: 305152,
@@ -161,6 +170,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "Deployment Pipeline Overview.pdf",
     fileType: "pdf",
     category: "Architecture",
+    description:
+      "Overview of the CI/CD pipeline stages from build to production rollout.",
+    status: "ready",
     updatedBy: { name: "Sam Ortiz", avatarInitials: "SO" },
     updatedAt: "2026-08-09T10:00:00Z",
     fileSizeBytes: 1887436,
@@ -172,6 +184,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "Time Off Policy.pdf",
     fileType: "pdf",
     category: "Policy",
+    description:
+      "Company policy on paid time off accrual, requests, and rollover.",
+    status: "ready",
     updatedBy: { name: "Jordan Lee", avatarInitials: "JL" },
     updatedAt: "2026-07-01T10:00:00Z",
     fileSizeBytes: 412672,
@@ -183,6 +198,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "New Hire Onboarding.docx",
     fileType: "docx",
     category: "Onboarding",
+    description:
+      "Paperwork and setup steps new hires complete before their start date.",
+    status: "ready",
     updatedBy: { name: "Jordan Lee", avatarInitials: "JL" },
     updatedAt: "2026-08-02T10:00:00Z",
     fileSizeBytes: 256000,
@@ -194,6 +212,9 @@ export const mockDocuments: DocumentSummary[] = [
     name: "Pricing Playbook.pdf",
     fileType: "pdf",
     category: "Playbook",
+    description:
+      "Standard pricing, discount tiers, and negotiation guidance for sales.",
+    status: "ready",
     updatedBy: { name: "Morgan Diaz", avatarInitials: "MD" },
     updatedAt: "2026-08-10T10:00:00Z",
     fileSizeBytes: 2202009,
