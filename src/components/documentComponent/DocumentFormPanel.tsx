@@ -1,5 +1,5 @@
 // src/components/documentComponent/DocumentFormPanel.tsx
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
@@ -83,8 +83,15 @@ function DocumentFormPanelBody({
   const [contentMode, setContentMode] = useState<"upload" | "write">("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [markdownContent, setMarkdownContent] = useState("");
+  // Guards against a double-submit landing during the ~220ms exit
+  // animation after onClose() (AnimatePresence keeps the panel mounted and
+  // interactive while it exits). Set only after validation passes, so a
+  // failed validation attempt never permanently locks out a resubmit.
+  const hasSubmittedRef = useRef(false);
 
   const handleSubmit = () => {
+    if (hasSubmittedRef.current) return;
+
     if (!name.trim()) {
       toast.error("Document name is required.");
       return;
@@ -95,6 +102,7 @@ function DocumentFormPanelBody({
     }
 
     if (document) {
+      hasSubmittedRef.current = true;
       onUpdate(document.id, {
         name: name.trim(),
         category: category.trim(),
@@ -114,6 +122,7 @@ function DocumentFormPanelBody({
         toast.error("Only PDF, DOCX, or Markdown files are supported.");
         return;
       }
+      hasSubmittedRef.current = true;
       onCreate({
         name: name.trim(),
         category: category.trim(),
@@ -126,6 +135,7 @@ function DocumentFormPanelBody({
         toast.error("Write some content before uploading.");
         return;
       }
+      hasSubmittedRef.current = true;
       onCreate({
         name: name.trim(),
         category: category.trim(),
