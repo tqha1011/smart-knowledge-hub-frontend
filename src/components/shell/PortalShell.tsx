@@ -16,7 +16,13 @@ import {
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { PageTransition } from "../common/PageTransition";
-import type { DocumentSummary, KnowledgeGapItem, Space } from "../../types";
+import type {
+  DocumentSummary,
+  DocumentUpdateInput,
+  KnowledgeGapItem,
+  NewDocumentInput,
+  Space,
+} from "../../types";
 
 const NAV_PAGE_TITLE: Record<ShellNavKey, string> = {
   documents: "Documents",
@@ -90,6 +96,51 @@ export function PortalShell() {
     toast.success("Document deleted.");
   };
 
+  const handleCreateDocument = (input: NewDocumentInput) => {
+    const newDocument: DocumentSummary = {
+      id: `doc-${Date.now()}`,
+      spaceId: selectedSpace.id,
+      name: input.name,
+      fileType: input.fileType,
+      category: input.category,
+      description: input.description,
+      status: "processing",
+      updatedBy: {
+        name: currentUser.name,
+        avatarInitials: currentUser.avatarInitials,
+      },
+      updatedAt: new Date().toISOString(),
+      fileSizeBytes: input.fileSizeBytes,
+      citationCount: 0,
+    };
+    setDocuments((prev) => [newDocument, ...prev]);
+    toast.success("Document uploaded.");
+  };
+
+  const handleUpdateDocument = (
+    documentId: string,
+    updates: DocumentUpdateInput,
+  ) => {
+    setDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === documentId
+          ? {
+              ...doc,
+              name: updates.name,
+              category: updates.category,
+              description: updates.description,
+              updatedBy: {
+                name: currentUser.name,
+                avatarInitials: currentUser.avatarInitials,
+              },
+              updatedAt: new Date().toISOString(),
+            }
+          : doc,
+      ),
+    );
+    toast.success("Document details updated.");
+  };
+
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
     setActiveNavKey(
       tab === "needs-attention" ? "needs-attention" : "documents",
@@ -145,6 +196,8 @@ export function PortalShell() {
                   onTabChange={handleLibraryTabChange}
                   documents={documents}
                   onDeleteDocument={handleDeleteDocument}
+                  onCreateDocument={handleCreateDocument}
+                  onUpdateDocument={handleUpdateDocument}
                   knowledgeGaps={knowledgeGaps}
                   onResolveGap={handleResolveGap}
                   onIgnoreGap={handleIgnoreGap}

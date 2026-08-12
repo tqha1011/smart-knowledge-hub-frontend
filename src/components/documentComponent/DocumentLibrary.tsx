@@ -1,3 +1,4 @@
+// src/components/documentComponent/DocumentLibrary.tsx
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "react-toastify";
@@ -5,8 +6,15 @@ import { CategoryFilterChips } from "./CategoryFilterChips";
 import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
+import { DocumentFormPanel } from "./DocumentFormPanel";
 import { mockDocumentCitations } from "../shell/shellMockData";
-import type { DocumentSummary, KnowledgeGapItem, Space } from "../../types";
+import type {
+  DocumentSummary,
+  DocumentUpdateInput,
+  KnowledgeGapItem,
+  NewDocumentInput,
+  Space,
+} from "../../types";
 
 export type DocumentLibraryTab = "all" | "needs-attention";
 
@@ -18,6 +26,8 @@ interface DocumentLibraryProps {
   onTabChange: (tab: DocumentLibraryTab) => void;
   documents: DocumentSummary[];
   onDeleteDocument: (documentId: string) => void;
+  onCreateDocument: (input: NewDocumentInput) => void;
+  onUpdateDocument: (documentId: string, updates: DocumentUpdateInput) => void;
   knowledgeGaps: KnowledgeGapItem[];
   onResolveGap: (id: string) => void;
   onIgnoreGap: (id: string) => void;
@@ -25,9 +35,11 @@ interface DocumentLibraryProps {
 
 // Page structure per spec: title + subtitle + Upload button, tabs, category
 // chips (table view only), then either the document table or the
-// knowledge-gap queue. Row clicks open the Document detail panel (this
-// piece). Document creation/edit are a separate piece (Upload/Edit panel)
-// not built yet, so the actions that would open that panel are toast stubs.
+// knowledge-gap queue. Row clicks open the Document detail panel. Upload
+// and "Edit details" both open the shared Upload/Edit form panel — Upload
+// in create mode, Edit details in edit mode for whichever document the
+// detail panel had open (closing the detail panel first, not stacking two
+// overlays).
 export function DocumentLibrary({
   space,
   canManage,
@@ -35,6 +47,8 @@ export function DocumentLibrary({
   onTabChange,
   documents,
   onDeleteDocument,
+  onCreateDocument,
+  onUpdateDocument,
   knowledgeGaps,
   onResolveGap,
   onIgnoreGap,
@@ -44,6 +58,10 @@ export function DocumentLibrary({
   const [selectedDocument, setSelectedDocument] =
     useState<DocumentSummary | null>(null);
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+
+  const [isFormPanelOpen, setIsFormPanelOpen] = useState(false);
+  const [formPanelDocument, setFormPanelDocument] =
+    useState<DocumentSummary | null>(null);
 
   const categories = Array.from(
     new Set(documents.map((doc) => doc.category)),
@@ -71,8 +89,19 @@ export function DocumentLibrary({
     toast.info("Opening the file isn't wired to a backend yet.");
   };
 
+  const handleOpenUploadPanel = () => {
+    setFormPanelDocument(null);
+    setIsFormPanelOpen(true);
+  };
+
   const handleEditDetails = () => {
-    toast.info("Edit document panel isn't built yet.");
+    setIsDetailPanelOpen(false);
+    setFormPanelDocument(selectedDocument);
+    setIsFormPanelOpen(true);
+  };
+
+  const handleCloseFormPanel = () => {
+    setIsFormPanelOpen(false);
   };
 
   const handleReplaceFile = () => {
@@ -100,7 +129,7 @@ export function DocumentLibrary({
         {canManage && (
           <button
             type="button"
-            onClick={() => toast.info("Upload document panel isn't built yet.")}
+            onClick={handleOpenUploadPanel}
             className="bg-accent flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white"
           >
             <Plus size={16} />
@@ -172,6 +201,15 @@ export function DocumentLibrary({
         onEditDetails={handleEditDetails}
         onReplaceFile={handleReplaceFile}
         onDelete={handleDeleteDocument}
+      />
+
+      <DocumentFormPanel
+        isOpen={isFormPanelOpen}
+        document={formPanelDocument}
+        categories={categories}
+        onClose={handleCloseFormPanel}
+        onCreate={onCreateDocument}
+        onUpdate={onUpdateDocument}
       />
     </div>
   );
