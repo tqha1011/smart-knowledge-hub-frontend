@@ -1,30 +1,12 @@
-import { File, FileCode, FileText, MoreHorizontal } from "lucide-react";
-import type { DocumentFileType, DocumentSummary } from "../../types";
+import { MoreHorizontal } from "lucide-react";
+import type { DocumentSummary } from "../../types";
+import { FILE_TYPE_ICON, formatRelativeDate } from "./documentDisplay";
 
 interface DocumentTableProps {
   documents: DocumentSummary[];
   onOpenDocument: (doc: DocumentSummary) => void;
   /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
   canManage: boolean;
-}
-
-const FILE_TYPE_ICON: Record<DocumentFileType, typeof FileText> = {
-  pdf: FileText,
-  docx: File,
-  markdown: FileCode,
-};
-
-function formatRelativeDate(iso: string): string {
-  const diffDays = Math.floor(
-    (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),
-  );
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks > 1 ? "s" : ""} ago`;
-  const diffMonths = Math.floor(diffDays / 30);
-  return `${diffMonths} month${diffMonths > 1 ? "s" : ""} ago`;
 }
 
 // List/table view (spec: chosen over a card grid so category/owner/date/
