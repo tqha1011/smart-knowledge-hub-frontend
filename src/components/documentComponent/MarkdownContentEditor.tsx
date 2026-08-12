@@ -45,7 +45,13 @@ export function MarkdownContentEditor({
     const textarea = textareaRef.current;
     if (!textarea) return;
     const { selectionStart } = textarea;
-    const lineStart = value.lastIndexOf("\n", selectionStart - 1) + 1;
+    // selectionStart === 0 is always the start of line 1, regardless of what
+    // follows — searching from -1 would incorrectly match a leading "\n"
+    // (lastIndexOf clamps a negative fromIndex to 0), so short-circuit it.
+    const lineStart =
+      selectionStart === 0
+        ? 0
+        : value.lastIndexOf("\n", selectionStart - 1) + 1;
     const next = value.slice(0, lineStart) + prefix + value.slice(lineStart);
     onChange(next);
     requestAnimationFrame(() => {
