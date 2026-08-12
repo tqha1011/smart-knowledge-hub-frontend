@@ -3,9 +3,12 @@ export type { CurrentUser } from "./commonType/user";
 export type {
   DocumentAuthor,
   DocumentFileType,
+  DocumentStatus,
   DocumentSummary,
   KnowledgeGapItem,
   DocumentCitation,
+  NewDocumentInput,
+  DocumentUpdateInput,
 } from "./commonType/document";
 export type {
   LoginDto,

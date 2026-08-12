@@ -5,15 +5,17 @@ export interface DocumentAuthor {
 
 export type DocumentFileType = "pdf" | "docx" | "markdown";
 
-// Table row shape for the Document Library — no `status` field yet, since
-// the design spec only shows the Processing/Ready/Failed badge in the
-// Upload/Edit panel (a separate plan), not this table.
+export type DocumentStatus = "processing" | "ready" | "failed";
+
+// Table row shape for the Document Library.
 export interface DocumentSummary {
   id: string;
   spaceId: string;
   name: string;
   fileType: DocumentFileType;
   category: string;
+  description: string;
+  status: DocumentStatus;
   updatedBy: DocumentAuthor;
   /** ISO 8601 timestamp — formatted to a relative label in DocumentTable. */
   updatedAt: string;
@@ -43,4 +45,26 @@ export interface DocumentCitation {
   askedCount: number;
   /** ISO 8601 timestamp of the most recent time this question was asked. */
   lastAskedAt: string;
+}
+
+// Payload submitted by the Upload/Edit panel when creating a brand-new
+// document (Upload entry point). fileType/fileSizeBytes come from the
+// chosen file (Upload file mode) or are derived client-side from the
+// typed content (Write content mode) — see DocumentFormPanel.
+export interface NewDocumentInput {
+  name: string;
+  category: string;
+  description: string;
+  fileType: DocumentFileType;
+  fileSizeBytes: number;
+}
+
+// Payload submitted by the Upload/Edit panel when editing an existing
+// document's details (Edit entry point, from the Document detail panel's
+// "Edit details" action). File content/type is not editable here — that's
+// the separate, still-stubbed "Replace file" action.
+export interface DocumentUpdateInput {
+  name: string;
+  category: string;
+  description: string;
 }
