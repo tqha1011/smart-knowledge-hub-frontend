@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { LogOut, Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
+import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
 import {
   mockCurrentUser,
   mockSpaceStats,
 } from "../components/shell/shellMockData";
+import type { SpaceMembership } from "../types";
 
 // Landing page after login — every Space the current user belongs to, one
 // card each. Both Admin and Employee land here; only per-action gating
@@ -16,6 +19,10 @@ import {
 export function SpacesOverviewPage() {
   const navigate = useNavigate();
   const currentUser = mockCurrentUser; // MOCK: stand-in for GET /me, no auth session yet
+  const [memberships, setMemberships] = useState<SpaceMembership[]>(
+    currentUser.memberships,
+  );
+  const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -62,12 +69,14 @@ export function SpacesOverviewPage() {
               </p>
             </div>
 
-            {/* Admin-only, global action. Space creation is a documented
-                non-goal for this spec, so this is a stub, not a real flow. */}
+            {/* Admin-only, global action. Space creation itself is a
+                documented non-goal of the design spec, but the app needs a
+                real path to create one, so this panel isn't spec'd chrome —
+                it reuses the app's established slide-over pattern. */}
             {currentUser.isAdmin && (
               <button
                 type="button"
-                onClick={() => toast.info("Space creation isn't built yet.")}
+                onClick={() => setIsCreateSpaceOpen(true)}
                 className="border-border text-ink hover:bg-surface-sunken flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
               >
                 <Plus size={16} />
@@ -77,7 +86,7 @@ export function SpacesOverviewPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {currentUser.memberships.map(({ space, role }) => {
+            {memberships.map(({ space, role }) => {
               const stats = mockSpaceStats[space.id];
               // Space-scoped action: global Admin OR Editor in *this* Space —
               // not gated on isAdmin alone, per the (Space, role) permission model.
@@ -132,6 +141,14 @@ export function SpacesOverviewPage() {
           </div>
         </main>
       </div>
+
+      <CreateSpacePanel
+        isOpen={isCreateSpaceOpen}
+        onClose={() => setIsCreateSpaceOpen(false)}
+        onCreated={(space) =>
+          setMemberships((prev) => [...prev, { space, role: "Editor" }])
+        }
+      />
     </PageTransition>
   );
 }
