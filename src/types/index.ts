@@ -6,7 +6,13 @@ export type {
   CreateSpaceDto,
   CreateSpaceTypeDto,
 } from "./commonType/space";
-export type { CurrentUser } from "./commonType/user";
+export type {
+  CurrentUser,
+  OrgUser,
+  UserStatus,
+  UserAccessUpdate,
+  InviteCandidate,
+} from "./commonType/user";
 export type {
   DocumentAuthor,
   DocumentFileType,
