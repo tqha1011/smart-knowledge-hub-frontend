@@ -25,8 +25,9 @@ export function usePanelDismiss(
 ): RefObject<HTMLDivElement | null> {
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
-  // eslint-disable-next-line react-hooks/refs
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
