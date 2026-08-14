@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
 import { createSpace, listSpaceTypes } from "../../services/spaceService";
 import { CreateSpaceTypeModal } from "./CreateSpaceTypeModal";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 import type { Space, SpaceType } from "../../types";
 
 interface CreateSpacePanelProps {
@@ -56,6 +57,8 @@ export function CreateSpacePanel({
     onClose();
   };
 
+  const panelRef = usePanelDismiss(isOpen, handleClose, isTypeModalOpen);
+
   const handleTypeCreated = (newType: SpaceType) => {
     setTypes((prev) => [...prev, newType]);
     setTypeId(newType.id);
@@ -103,6 +106,7 @@ export function CreateSpacePanel({
               className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
             />
             <motion.div
+              ref={panelRef}
               role="dialog"
               aria-modal="true"
               aria-label="Create space"
