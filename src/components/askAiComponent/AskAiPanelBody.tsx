@@ -4,6 +4,7 @@ import { Send, Sparkles, X } from "lucide-react";
 import type { ChatMessage } from "../../types";
 import { UserMessageBubble } from "./UserMessageBubble";
 import { AssistantMessageBubble } from "./AssistantMessageBubble";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface AskAiPanelBodyProps {
   messages: ChatMessage[];
@@ -36,6 +37,7 @@ export function AskAiPanelBody({
   prefersReducedMotion,
 }: AskAiPanelBodyProps) {
   const threadEndRef = useRef<HTMLDivElement>(null);
+  const panelRef = usePanelDismiss(true, onClose);
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({
@@ -56,6 +58,10 @@ export function AskAiPanelBody({
         onClick={onClose}
       />
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Ask AI"
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}

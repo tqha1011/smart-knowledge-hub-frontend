@@ -8,6 +8,7 @@ import {
   formatFileSize,
   formatRelativeDate,
 } from "./documentDisplay";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface DocumentDetailPanelProps {
   document: DocumentSummary | null;
@@ -91,6 +92,7 @@ function DocumentDetailPanelBody({
 }: DocumentDetailPanelBodyProps) {
   const FileIcon = FILE_TYPE_ICON[document.fileType];
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const panelRef = usePanelDismiss(true, onClose);
 
   return (
     <div className="fixed inset-0 z-40">
@@ -105,6 +107,10 @@ function DocumentDetailPanelBody({
         onClick={onClose}
       />
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${document.name} details`}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}

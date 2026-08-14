@@ -11,6 +11,7 @@ import type {
 import { STATUS_BADGE, fileTypeFromFileName } from "./documentDisplay";
 import { FileDropzone } from "./FileDropzone";
 import { MarkdownContentEditor } from "./MarkdownContentEditor";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface DocumentFormPanelProps {
   isOpen: boolean;
@@ -88,6 +89,7 @@ function DocumentFormPanelBody({
   // interactive while it exits). Set only after validation passes, so a
   // failed validation attempt never permanently locks out a resubmit.
   const hasSubmittedRef = useRef(false);
+  const panelRef = usePanelDismiss(true, onClose);
 
   const handleSubmit = () => {
     if (hasSubmittedRef.current) return;
@@ -160,6 +162,10 @@ function DocumentFormPanelBody({
         onClick={onClose}
       />
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={document ? "Edit document details" : "Upload document"}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
