@@ -14,6 +14,7 @@ import {
   mockKnowledgeGaps,
   mockOrgUsers,
   mockSpaces,
+  setMockOrgUsers,
 } from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
@@ -76,7 +77,11 @@ export function PortalShell() {
   // Same lifted-state pattern as documents/knowledgeGaps above: users is
   // org-wide (not filtered by Space), but UsersRolesPage is still
   // conditionally rendered (unmounts on nav switch), so it must live here
-  // to survive that round-trip.
+  // to survive that round-trip. Unlike those two, this state must ALSO
+  // survive a Space switch — that remounts PortalShell itself and rebuilds
+  // this seed — so the handlers below write back through setMockOrgUsers()
+  // instead of only calling setUsers(). documents/knowledgeGaps are
+  // legitimately Space-scoped and should reseed per Space; users isn't.
   const [users, setUsers] = useState<OrgUser[]>(() => mockOrgUsers);
 
   if (!membership) {
@@ -173,8 +178,8 @@ export function PortalShell() {
   };
 
   const handleUpdateUserAccess = (userId: string, update: UserAccessUpdate) => {
-    setUsers((prev) =>
-      prev.map((user) =>
+    setUsers((prev) => {
+      const next = prev.map((user) =>
         user.id === userId
           ? {
               ...user,
@@ -182,32 +187,42 @@ export function PortalShell() {
               memberships: update.memberships,
             }
           : user,
-      ),
-    );
+      );
+      setMockOrgUsers(next);
+      return next;
+    });
     toast.success("User access updated.");
   };
 
   const handleRemoveUser = (userId: string) => {
-    setUsers((prev) => prev.filter((user) => user.id !== userId));
+    setUsers((prev) => {
+      const next = prev.filter((user) => user.id !== userId);
+      setMockOrgUsers(next);
+      return next;
+    });
     toast.success("User removed.");
   };
 
   const handleInvitePeople = (candidates: InviteCandidate[]) => {
-    setUsers((prev) => [
-      ...prev,
-      ...candidates.map((candidate, index) => {
-        const space = mockSpaces.find((s) => s.id === candidate.spaceId);
-        return {
-          id: `user-${Date.now()}-${index}`,
-          name: candidate.email.split("@")[0],
-          email: candidate.email,
-          avatarInitials: candidate.email.slice(0, 2).toUpperCase(),
-          isAdmin: false,
-          status: "invited" as const,
-          memberships: space ? [{ space, role: candidate.role }] : [],
-        };
-      }),
-    ]);
+    setUsers((prev) => {
+      const next = [
+        ...prev,
+        ...candidates.map((candidate, index) => {
+          const space = mockSpaces.find((s) => s.id === candidate.spaceId);
+          return {
+            id: `user-${Date.now()}-${index}`,
+            name: candidate.email.split("@")[0],
+            email: candidate.email,
+            avatarInitials: candidate.email.slice(0, 2).toUpperCase(),
+            isAdmin: false,
+            status: "invited" as const,
+            memberships: space ? [{ space, role: candidate.role }] : [],
+          };
+        }),
+      ];
+      setMockOrgUsers(next);
+      return next;
+    });
     toast.success(
       `Sent ${candidates.length} invite${candidates.length === 1 ? "" : "s"}.`,
     );

@@ -64,7 +64,7 @@ export const mockCurrentUser: CurrentUser = {
 // same people already appearing as document authors below (Priya Nair,
 // Sam Ortiz, Jordan Lee, Morgan Diaz), so the two mock datasets read as one
 // consistent org rather than disconnected examples.
-export const mockOrgUsers: OrgUser[] = [
+export let mockOrgUsers: OrgUser[] = [
   {
     id: mockCurrentUser.id,
     name: mockCurrentUser.name,
@@ -129,6 +129,23 @@ export const mockOrgUsers: OrgUser[] = [
     memberships: [{ space: mockSpaces[2], role: "Employee" }],
   },
 ];
+
+// MOCK: persists Users & Roles edits for the page session. `users` is
+// org-wide (unlike documents/knowledgeGaps, which are legitimately
+// Space-scoped and should reseed per Space), but switching Spaces
+// navigates to /spaces/:spaceId, which remounts PortalShell and rebuilds
+// its `useState(() => mockOrgUsers)` seed — so without writing back here,
+// every promote/remove/invite would be silently undone on a Space switch.
+// A module-level mutable binding survives remounts because it's the same
+// JS module instance for the whole page session (only a full reload
+// resets it), mirroring spaceService.createSpace()'s mutation of
+// mockCurrentUser.memberships. Reassignment has to live in this module:
+// ES module imports are read-only bindings, so PortalShell can't assign
+// to `mockOrgUsers` directly (TS2632) — it calls this setter, and the
+// live binding means its next mount reads the updated array.
+export function setMockOrgUsers(next: OrgUser[]) {
+  mockOrgUsers = next;
+}
 
 // MOCK: stand-in for `GET /documents/:documentId/citations`. Backs the
 // Document detail panel's "Cited by the Assistant" list. Each document's
