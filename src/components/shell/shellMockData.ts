@@ -3,6 +3,7 @@ import type {
   DocumentCitation,
   DocumentSummary,
   KnowledgeGapItem,
+  OrgUser,
   Space,
   SpaceType,
 } from "../../types";
@@ -54,6 +55,80 @@ export const mockCurrentUser: CurrentUser = {
     { space: mockSpaces[2], role: "Employee" },
   ],
 };
+
+// MOCK: stand-in for `GET /admin/users` (Users & Roles admin list) — every
+// person across the org, not Space-scoped. The first entry mirrors
+// mockCurrentUser's own fields (not duplicated by hand) so the two can't
+// drift out of sync, matching the countCitations/countDocuments derivation
+// pattern used elsewhere in this file. Names/initials for u2–u5 reuse the
+// same people already appearing as document authors below (Priya Nair,
+// Sam Ortiz, Jordan Lee, Morgan Diaz), so the two mock datasets read as one
+// consistent org rather than disconnected examples.
+export const mockOrgUsers: OrgUser[] = [
+  {
+    id: mockCurrentUser.id,
+    name: mockCurrentUser.name,
+    email: mockCurrentUser.email,
+    avatarInitials: mockCurrentUser.avatarInitials,
+    isAdmin: mockCurrentUser.isAdmin,
+    status: "active",
+    memberships: mockCurrentUser.memberships,
+  },
+  {
+    id: "u2",
+    name: "Priya Nair",
+    email: "priya@company.com",
+    avatarInitials: "PN",
+    isAdmin: false,
+    status: "active",
+    memberships: [{ space: mockSpaces[0], role: "Editor" }],
+  },
+  {
+    id: "u3",
+    name: "Sam Ortiz",
+    email: "sam@company.com",
+    avatarInitials: "SO",
+    isAdmin: false,
+    status: "active",
+    memberships: [{ space: mockSpaces[0], role: "Editor" }],
+  },
+  {
+    id: "u4",
+    name: "Jordan Lee",
+    email: "jordan@company.com",
+    avatarInitials: "JL",
+    isAdmin: false,
+    status: "active",
+    memberships: [{ space: mockSpaces[1], role: "Editor" }],
+  },
+  {
+    id: "u5",
+    name: "Morgan Diaz",
+    email: "morgan@company.com",
+    avatarInitials: "MD",
+    isAdmin: false,
+    status: "active",
+    memberships: [{ space: mockSpaces[2], role: "Editor" }],
+  },
+  {
+    id: "u6",
+    name: "Casey Kim",
+    email: "casey@company.com",
+    avatarInitials: "CK",
+    isAdmin: false,
+    status: "active",
+    memberships: [{ space: mockSpaces[1], role: "Employee" }],
+  },
+  {
+    id: "u7",
+    name: "Taylor Brooks",
+    email: "taylor@company.com",
+    avatarInitials: "TB",
+    isAdmin: false,
+    status: "invited",
+    memberships: [{ space: mockSpaces[2], role: "Employee" }],
+  },
+];
 
 // MOCK: stand-in for `GET /documents/:documentId/citations`. Backs the
 // Document detail panel's "Cited by the Assistant" list. Each document's
