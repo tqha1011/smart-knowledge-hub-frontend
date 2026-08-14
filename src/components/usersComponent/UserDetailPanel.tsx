@@ -196,6 +196,7 @@ function UserDetailPanelBody({
             type="button"
             role="switch"
             aria-checked={isAdminEdit}
+            aria-label="System-wide Admin access"
             onClick={() => setIsAdminEdit((prev) => !prev)}
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
               isAdminEdit ? "bg-accent" : "bg-surface-sunken"
@@ -231,9 +232,10 @@ function UserDetailPanelBody({
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {memberships.map((membership) => (
+              {memberships.map((membership, index) => (
                 <div key={membership.key} className="flex items-center gap-2">
                   <select
+                    aria-label={`Space for membership ${index + 1}`}
                     value={membership.spaceId}
                     onChange={(event) =>
                       handleMembershipSpaceChange(
@@ -250,6 +252,7 @@ function UserDetailPanelBody({
                     ))}
                   </select>
                   <select
+                    aria-label={`Role for membership ${index + 1}`}
                     value={membership.role}
                     onChange={(event) =>
                       handleMembershipRoleChange(
@@ -265,7 +268,7 @@ function UserDetailPanelBody({
                   <button
                     type="button"
                     onClick={() => handleRemoveMembership(membership.key)}
-                    aria-label="Remove space membership"
+                    aria-label={`Remove membership ${index + 1}`}
                     className="text-ink-muted hover:bg-surface-sunken flex size-8 shrink-0 items-center justify-center rounded-md"
                   >
                     <X size={14} />
