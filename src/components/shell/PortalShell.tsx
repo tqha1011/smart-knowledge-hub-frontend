@@ -12,23 +12,23 @@ import {
   mockCurrentUser,
   mockDocuments,
   mockKnowledgeGaps,
+  mockOrgUsers,
+  mockSpaces,
 } from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
+import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
 import type {
   DocumentSummary,
   DocumentUpdateInput,
+  InviteCandidate,
   KnowledgeGapItem,
   NewDocumentInput,
+  OrgUser,
   Space,
+  UserAccessUpdate,
 } from "../../types";
-
-const NAV_PAGE_TITLE: Record<ShellNavKey, string> = {
-  documents: "Documents",
-  "needs-attention": "Needs attention",
-  "users-roles": "Users & Roles",
-};
 
 // Portal shell: icon rail + labeled sidebar + topbar on desktop, collapsing
 // to a hamburger drawer + bottom tab bar on mobile (see spec's responsive
@@ -72,6 +72,12 @@ export function PortalShell() {
   const [documents, setDocuments] = useState<DocumentSummary[]>(() =>
     mockDocuments.filter((doc) => doc.spaceId === membership?.space.id),
   );
+
+  // Same lifted-state pattern as documents/knowledgeGaps above: users is
+  // org-wide (not filtered by Space), but UsersRolesPage is still
+  // conditionally rendered (unmounts on nav switch), so it must live here
+  // to survive that round-trip.
+  const [users, setUsers] = useState<OrgUser[]>(() => mockOrgUsers);
 
   if (!membership) {
     return <Navigate to="/spaces" replace />;
@@ -166,6 +172,47 @@ export function PortalShell() {
     toast.success("Document details updated.");
   };
 
+  const handleUpdateUserAccess = (userId: string, update: UserAccessUpdate) => {
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.id === userId
+          ? {
+              ...user,
+              isAdmin: update.isAdmin,
+              memberships: update.memberships,
+            }
+          : user,
+      ),
+    );
+    toast.success("User access updated.");
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    setUsers((prev) => prev.filter((user) => user.id !== userId));
+    toast.success("User removed.");
+  };
+
+  const handleInvitePeople = (candidates: InviteCandidate[]) => {
+    setUsers((prev) => [
+      ...prev,
+      ...candidates.map((candidate, index) => {
+        const space = mockSpaces.find((s) => s.id === candidate.spaceId);
+        return {
+          id: `user-${Date.now()}-${index}`,
+          name: candidate.email.split("@")[0],
+          email: candidate.email,
+          avatarInitials: candidate.email.slice(0, 2).toUpperCase(),
+          isAdmin: false,
+          status: "invited" as const,
+          memberships: space ? [{ space, role: candidate.role }] : [],
+        };
+      }),
+    ]);
+    toast.success(
+      `Sent ${candidates.length} invite${candidates.length === 1 ? "" : "s"}.`,
+    );
+  };
+
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
     setActiveNavKey(
       tab === "needs-attention" ? "needs-attention" : "documents",
@@ -229,17 +276,13 @@ export function PortalShell() {
                 />
               )}
               {activeNavKey === "users-roles" && (
-                <>
-                  <p className="text-ink-muted mb-1 font-mono text-xs tracking-wide uppercase">
-                    {selectedSpace.name} · placeholder content
-                  </p>
-                  <h1 className="font-display text-ink text-3xl font-semibold">
-                    {NAV_PAGE_TITLE[activeNavKey]}
-                  </h1>
-                  <div className="border-border text-ink-muted mt-6 flex min-h-64 items-center justify-center rounded-lg border border-dashed text-center text-sm">
-                    Users & Roles admin UI is spec piece 7 — not built yet.
-                  </div>
-                </>
+                <UsersRolesPage
+                  users={users}
+                  allSpaces={mockSpaces}
+                  onUpdateUserAccess={handleUpdateUserAccess}
+                  onRemoveUser={handleRemoveUser}
+                  onInvitePeople={handleInvitePeople}
+                />
               )}
             </main>
           </div>
