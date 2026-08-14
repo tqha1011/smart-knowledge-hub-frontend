@@ -57,7 +57,7 @@ export function CreateSpacePanel({
     onClose();
   };
 
-  const panelRef = usePanelDismiss(isOpen, handleClose);
+  const panelRef = usePanelDismiss(isOpen, handleClose, isTypeModalOpen);
 
   const handleTypeCreated = (newType: SpaceType) => {
     setTypes((prev) => [...prev, newType]);
