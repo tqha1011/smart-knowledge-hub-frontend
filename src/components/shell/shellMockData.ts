@@ -4,7 +4,25 @@ import type {
   DocumentSummary,
   KnowledgeGapItem,
   Space,
+  SpaceType,
 } from "../../types";
+
+// MOCK: stand-in for `GET /space-types`.
+export const mockSpaceTypes: SpaceType[] = [
+  { id: "department", name: "Department" },
+  { id: "project", name: "Project" },
+  { id: "practice-area", name: "Practice area" },
+];
+
+// Cycled through for Spaces created without an explicit color — pulled from
+// the app's own token palette so new dots never clash with it.
+export const spaceColorPalette = [
+  "#0E8F82",
+  "#B8860B",
+  "#6E6A5F",
+  "#2F7D5B",
+  "#C0392B",
+];
 
 // MOCK: stand-in for `GET /spaces` (the Spaces the current user can access).
 export const mockSpaces: Space[] = [
