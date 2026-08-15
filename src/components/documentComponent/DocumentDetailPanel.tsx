@@ -256,9 +256,7 @@ function DocumentDetailPanelBody({
                     {citation.question}
                   </p>
                   <p className="text-ink-muted mt-0.5 font-mono text-xs">
-                    Asked {citation.askedCount} time
-                    {citation.askedCount === 1 ? "" : "s"} · Last asked{" "}
-                    {formatRelativeDate(citation.lastAskedAt)}
+                    Last asked {formatRelativeDate(citation.lastAskedAt)}
                   </p>
                 </li>
               ))}
