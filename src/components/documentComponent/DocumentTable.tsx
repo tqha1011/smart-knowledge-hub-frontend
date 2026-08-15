@@ -2,8 +2,8 @@ import { MoreHorizontal } from "lucide-react";
 import type { DocumentSummary } from "../../types";
 import {
   FILE_TYPE_ICON,
-  FILE_TYPE_LABEL,
   formatRelativeDate,
+  splitDocumentName,
 } from "./documentDisplay";
 
 interface DocumentTableProps {
@@ -55,21 +55,23 @@ export function DocumentTable({
         <tbody className="divide-border divide-y">
           {documents.map((doc) => {
             const Icon = FILE_TYPE_ICON[doc.fileType];
+            const { baseName, extension } = splitDocumentName(doc.name);
             return (
               <tr key={doc.id} className="hover:bg-surface-sunken">
                 <td className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => onOpenDocument(doc)}
+                    title={doc.name}
                     className="text-ink flex min-w-0 items-center gap-2 text-left font-medium"
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
-                    <span className="truncate">{doc.name}</span>
+                    <span className="truncate">{baseName}</span>
                   </button>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
                   <span className="text-ink-muted font-mono text-xs whitespace-nowrap">
-                    {FILE_TYPE_LABEL[doc.fileType]}
+                    {extension}
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
