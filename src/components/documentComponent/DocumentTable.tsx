@@ -1,6 +1,10 @@
 import { MoreHorizontal } from "lucide-react";
 import type { DocumentSummary } from "../../types";
-import { FILE_TYPE_ICON, formatRelativeDate } from "./documentDisplay";
+import {
+  FILE_TYPE_ICON,
+  FILE_TYPE_LABEL,
+  formatRelativeDate,
+} from "./documentDisplay";
 
 interface DocumentTableProps {
   documents: DocumentSummary[];
@@ -11,8 +15,8 @@ interface DocumentTableProps {
 
 // List/table view (spec: chosen over a card grid so category/owner/date/
 // citation-count stay scannable and comparable at volume). Responsive
-// column dropping — Updated by first, then Category — instead of
-// horizontal scroll, per spec.
+// column dropping — Updated by first, then Type and Category together —
+// instead of horizontal scroll, per spec.
 export function DocumentTable({
   documents,
   onOpenDocument,
@@ -32,6 +36,9 @@ export function DocumentTable({
         <thead className="bg-surface-sunken text-ink-muted text-xs">
           <tr>
             <th className="px-4 py-2.5 font-medium">Name</th>
+            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+              Type
+            </th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
               Category
             </th>
@@ -59,6 +66,11 @@ export function DocumentTable({
                     <Icon size={16} className="text-ink-muted shrink-0" />
                     <span className="truncate">{doc.name}</span>
                   </button>
+                </td>
+                <td className="hidden px-4 py-3 sm:table-cell">
+                  <span className="text-ink-muted font-mono text-xs whitespace-nowrap">
+                    {FILE_TYPE_LABEL[doc.fileType]}
+                  </span>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
                   <span className="bg-surface-sunken text-ink-muted rounded-md px-2 py-1 text-xs font-medium">
