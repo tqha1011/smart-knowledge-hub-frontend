@@ -13,6 +13,23 @@ export const FILE_TYPE_LABEL: Record<DocumentFileType, string> = {
   markdown: "Markdown",
 };
 
+// Splits a document's display name at its last "." so the Document
+// Library table can show the base name and file extension in separate
+// columns (Name / Type) instead of repeating the extension in both.
+export function splitDocumentName(name: string): {
+  baseName: string;
+  extension: string;
+} {
+  const lastDotIndex = name.lastIndexOf(".");
+  if (lastDotIndex <= 0) {
+    return { baseName: name, extension: "" };
+  }
+  return {
+    baseName: name.slice(0, lastDotIndex),
+    extension: name.slice(lastDotIndex + 1).toUpperCase(),
+  };
+}
+
 export function formatRelativeDate(iso: string): string {
   const diffDays = Math.floor(
     (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),
