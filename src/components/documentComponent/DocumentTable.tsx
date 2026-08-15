@@ -1,6 +1,7 @@
 import { MoreHorizontal } from "lucide-react";
 import type { DocumentSummary } from "../../types";
 import {
+  FILE_TYPE_BADGE_CLASS,
   FILE_TYPE_ICON,
   formatRelativeDate,
   splitDocumentName,
@@ -70,7 +71,9 @@ export function DocumentTable({
                   </button>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
-                  <span className="text-ink-muted font-mono text-xs whitespace-nowrap">
+                  <span
+                    className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium whitespace-nowrap ${FILE_TYPE_BADGE_CLASS[doc.fileType]}`}
+                  >
                     {extension}
                   </span>
                 </td>
