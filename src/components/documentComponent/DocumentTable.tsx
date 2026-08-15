@@ -1,6 +1,11 @@
 import { MoreHorizontal } from "lucide-react";
 import type { DocumentSummary } from "../../types";
-import { FILE_TYPE_ICON, formatRelativeDate } from "./documentDisplay";
+import {
+  FILE_TYPE_BADGE_CLASS,
+  FILE_TYPE_ICON,
+  formatRelativeDate,
+  splitDocumentName,
+} from "./documentDisplay";
 
 interface DocumentTableProps {
   documents: DocumentSummary[];
@@ -11,8 +16,8 @@ interface DocumentTableProps {
 
 // List/table view (spec: chosen over a card grid so category/owner/date/
 // citation-count stay scannable and comparable at volume). Responsive
-// column dropping — Updated by first, then Category — instead of
-// horizontal scroll, per spec.
+// column dropping — Updated by first, then Type and Category together —
+// instead of horizontal scroll, per spec.
 export function DocumentTable({
   documents,
   onOpenDocument,
@@ -33,6 +38,9 @@ export function DocumentTable({
           <tr>
             <th className="px-4 py-2.5 font-medium">Name</th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+              Type
+            </th>
+            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
               Category
             </th>
             <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
@@ -48,17 +56,26 @@ export function DocumentTable({
         <tbody className="divide-border divide-y">
           {documents.map((doc) => {
             const Icon = FILE_TYPE_ICON[doc.fileType];
+            const { baseName, extension } = splitDocumentName(doc.name);
             return (
               <tr key={doc.id} className="hover:bg-surface-sunken">
                 <td className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => onOpenDocument(doc)}
+                    title={doc.name}
                     className="text-ink flex min-w-0 items-center gap-2 text-left font-medium"
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
-                    <span className="truncate">{doc.name}</span>
+                    <span className="truncate">{baseName}</span>
                   </button>
+                </td>
+                <td className="hidden px-4 py-3 sm:table-cell">
+                  <span
+                    className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium whitespace-nowrap ${FILE_TYPE_BADGE_CLASS[doc.fileType]}`}
+                  >
+                    {extension}
+                  </span>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
                   <span className="bg-surface-sunken text-ink-muted rounded-md px-2 py-1 text-xs font-medium">

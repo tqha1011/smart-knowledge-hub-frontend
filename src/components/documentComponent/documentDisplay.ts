@@ -13,6 +13,32 @@ export const FILE_TYPE_LABEL: Record<DocumentFileType, string> = {
   markdown: "Markdown",
 };
 
+// Color-codes the Type column so the three file types are distinguishable
+// at a glance, not just by icon shape. Uses the --color-filetype-* tokens
+// from src/index.css (same bg/fg pill pattern as STATUS_BADGE below).
+export const FILE_TYPE_BADGE_CLASS: Record<DocumentFileType, string> = {
+  pdf: "bg-filetype-pdf-bg text-filetype-pdf-fg",
+  docx: "bg-filetype-docx-bg text-filetype-docx-fg",
+  markdown: "bg-filetype-markdown-bg text-filetype-markdown-fg",
+};
+
+// Splits a document's display name at its last "." so the Document
+// Library table can show the base name and file extension in separate
+// columns (Name / Type) instead of repeating the extension in both.
+export function splitDocumentName(name: string): {
+  baseName: string;
+  extension: string;
+} {
+  const lastDotIndex = name.lastIndexOf(".");
+  if (lastDotIndex <= 0) {
+    return { baseName: name, extension: "" };
+  }
+  return {
+    baseName: name.slice(0, lastDotIndex),
+    extension: name.slice(lastDotIndex + 1).toUpperCase(),
+  };
+}
+
 export function formatRelativeDate(iso: string): string {
   const diffDays = Math.floor(
     (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),

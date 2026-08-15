@@ -23,6 +23,13 @@
   --color-status-failed-bg: #fdeaea;
   --color-status-failed-fg: #c0392b;
 
+  --color-filetype-pdf-bg: #fde8e8;
+  --color-filetype-pdf-fg: #c0392b;
+  --color-filetype-docx-bg: #e8f0fe;
+  --color-filetype-docx-fg: #2b5fc4;
+  --color-filetype-markdown-bg: #f1e9fb;
+  --color-filetype-markdown-fg: #6d3fc4;
+
   --font-display: "Fraunces", serif;
   --font-sans: "Manrope", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
@@ -61,6 +68,13 @@
   --color-status-processing-fg: #e3a64a;
   --color-status-failed-bg: #331a1a;
   --color-status-failed-fg: #e38080;
+
+  --color-filetype-pdf-bg: #331a1a;
+  --color-filetype-pdf-fg: #e38080;
+  --color-filetype-docx-bg: #16233a;
+  --color-filetype-docx-fg: #6ea8f5;
+  --color-filetype-markdown-bg: #241a33;
+  --color-filetype-markdown-fg: #b28de0;
 }
 
 /* Matches the page's own bg-bg so route transitions never flash the
