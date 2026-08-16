@@ -91,7 +91,6 @@ export function PortalShell() {
 
   const canManageDocuments =
     currentUser.isAdmin || membership.role === "Editor";
-  const accessibleSpaceIds = currentUser.memberships.map((m) => m.space.id);
 
   const handleResolveGap = (id: string) => {
     setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
@@ -329,8 +328,7 @@ export function PortalShell() {
         <AskAiPanel
           isOpen={isAskAiOpen}
           onClose={() => setIsAskAiOpen(false)}
-          spaceCount={currentUser.memberships.length}
-          accessibleSpaceIds={accessibleSpaceIds}
+          selectedSpaceId={selectedSpace.id}
           selectedSpaceName={selectedSpace.name}
           onLogKnowledgeGap={handleLogKnowledgeGap}
         />

@@ -32,6 +32,8 @@
 
 ---
 
+> **Addendum (2026-08-16):** The Assistant's scope was later changed from all-Spaces to current-Space-only (see `docs/superpowers/specs/2026-08-05-knowledge-portal-ui-design.md` § "RAG Assistant" — Scope). `findAnswer` now takes a single `spaceId` instead of `accessibleSpaceIds: string[]`; `AskAiPanel`/`PortalShell` pass `selectedSpaceId` instead of `spaceCount`/`accessibleSpaceIds`; `AskAiCitation` dropped `spaceId`/`spaceName` and `AssistantMessageBubble` no longer renders a per-citation Space badge, since every citation is now guaranteed to be from the Space already named in the panel header. The task code samples below predate that change and are left as-is (a log of what was built at the time); see the current source files for the live version.
+
 ## Task 1: Ask AI types
 
 **Files:**

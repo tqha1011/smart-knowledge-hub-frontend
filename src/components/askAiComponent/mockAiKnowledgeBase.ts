@@ -1,4 +1,4 @@
-import { mockDocuments, mockSpaces } from "../shell/shellMockData";
+import { mockDocuments } from "../shell/shellMockData";
 import type { AskAiCitation, AssistantAnswer } from "../../types";
 
 interface AiAnswerEntry {
@@ -51,13 +51,13 @@ function keywordMatches(question: string, keyword: string): boolean {
 }
 
 // Returns a low-confidence AssistantAnswer (empty citations) when no
-// keyword matches, OR when every cited document falls outside the
-// accessible Space list — the caller (AskAiPanel) is responsible for
-// logging a knowledge gap whenever isLowConfidence is true.
+// keyword matches, OR when every cited document falls outside the current
+// Space — the caller (AskAiPanel) is responsible for logging a knowledge
+// gap whenever isLowConfidence is true.
 export function findAnswer(
   question: string,
-  accessibleSpaceIds: string[],
-  currentSpaceName: string,
+  spaceId: string,
+  spaceName: string,
 ): AssistantAnswer {
   const matchedEntry = mockAiAnswers.find((entry) =>
     entry.keywords.some((keyword) => keywordMatches(question, keyword)),
@@ -67,16 +67,13 @@ export function findAnswer(
     const citations: AskAiCitation[] = matchedEntry.documentIds
       .map((documentId, index) => {
         const document = mockDocuments.find((doc) => doc.id === documentId);
-        if (!document || !accessibleSpaceIds.includes(document.spaceId)) {
+        if (!document || document.spaceId !== spaceId) {
           return null;
         }
-        const space = mockSpaces.find((s) => s.id === document.spaceId);
         return {
           chipNumber: index + 1,
           documentId: document.id,
           documentTitle: document.name,
-          spaceId: document.spaceId,
-          spaceName: space?.name ?? document.spaceId,
         };
       })
       .filter((citation): citation is AskAiCitation => citation !== null);
@@ -91,7 +88,7 @@ export function findAnswer(
   }
 
   return {
-    text: `I don't have a confident source for that yet — I've logged it to ${currentSpaceName}'s Needs attention queue so an editor can add coverage.`,
+    text: `I don't have a confident source for that yet — I've logged it to ${spaceName}'s Needs attention queue so an editor can add coverage.`,
     citations: [],
     isLowConfidence: true,
   };

@@ -25,9 +25,10 @@ function renderAnswerText(text: string): ReactNode[] {
 
 // Left-aligned, neutral bubble for assistant answers, per spec: inline
 // numbered citation chips at the exact claim they support, a sources list
-// underneath repeating each chip number + document title + Space badge
-// (multi-Space search means every citation must show its Space), and a
-// feedback row. A low-confidence answer has no citations to list.
+// underneath repeating each chip number + document title, and a feedback
+// row. No per-citation Space badge — answers only ever cite documents in
+// the current Space, already named in the panel header. A low-confidence
+// answer has no citations to list.
 export function AssistantMessageBubble({
   message,
   onFeedback,
@@ -48,9 +49,6 @@ export function AssistantMessageBubble({
                 <CitationChip number={citation.chipNumber} />
                 <span className="text-ink font-medium">
                   {citation.documentTitle}
-                </span>
-                <span className="bg-surface text-ink-muted rounded-full px-1.5 py-0.5">
-                  {citation.spaceName}
                 </span>
               </li>
             ))}
