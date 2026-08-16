@@ -137,6 +137,10 @@ function DocumentDetailPanelBody({
           </button>
         </div>
 
+        {document.description && (
+          <p className="text-ink-muted mb-4 text-sm">{document.description}</p>
+        )}
+
         <dl className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <dt className="text-ink-muted text-xs">Space</dt>

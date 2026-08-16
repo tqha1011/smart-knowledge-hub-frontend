@@ -118,6 +118,8 @@ Both light and dark mode use the same structure; only the token values swap (see
 
 **Form factor: floating slide-over panel** (420px, right-aligned), same pattern as the Ask AI panel — opened by clicking a row in the Document Library table, dims/blurs the table behind it, closes back to exactly where the user was.
 
+**Description:** the document's description (set via the Upload/Edit panel's Description field) renders as a short paragraph directly under the title, above the metadata grid — it's prose about the document, not a metadata field, so it sits outside the 2-column grid. Not shown when empty.
+
 **Metadata + actions only — no embedded file preview.** The panel shows Space, file type/size, updated-by, and updated-date in a 2-column grid, then an action row: **Open/Download** (primary — opens the original file in a new tab/app), **Edit details**, **Replace file**, **Delete** (danger-styled). Opening the actual file content is delegated to the browser/OS, not rendered inline — keeps the panel simple and avoids building a PDF/doc viewer for this pass.
 
 **"Cited by the Assistant"** section below the actions: a list of the questions the RAG Assistant has answered using this document, each showing the question text, how many times it's been asked, and when it was last asked. This reuses the same underlying citation-tracking data as the Document Library's "Cited" column count — this panel is where that count becomes a real list.

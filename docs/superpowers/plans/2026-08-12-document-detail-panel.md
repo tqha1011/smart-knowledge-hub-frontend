@@ -488,6 +488,8 @@ git commit -m "refactor: extract shared document display helpers"
 
 ---
 
+> **Addendum (2026-08-16):** `DocumentSummary` later gained a `description` field (see `2026-08-12-upload-edit-document-panel.md`, Task 2). `DocumentDetailPanel` was updated to render it as a short paragraph under the title, above the metadata `dl` — not shown when empty. The Task 4 code sample below predates that change and is left as-is (a log of what was built at the time); see the current `DocumentDetailPanel.tsx` for the live version. Spec updated to match in `docs/superpowers/specs/2026-08-05-knowledge-portal-ui-design.md` § "Document detail panel".
+
 ## Task 4: DocumentDetailPanel component
 
 **Files:**
