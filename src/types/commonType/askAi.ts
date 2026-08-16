@@ -1,13 +1,11 @@
 // A cited source shown inline (as a numbered chip) and repeated in the
-// sources list below an assistant answer. Every citation carries its own
-// Space, since answers can cite documents across every Space the user has
-// access to, not just the currently selected one.
+// sources list below an assistant answer. No Space field — answers only
+// ever cite documents in the currently selected Space (already named in
+// the panel header), so there's nothing to disambiguate per citation.
 export interface AskAiCitation {
   chipNumber: number;
   documentId: string;
   documentTitle: string;
-  spaceId: string;
-  spaceName: string;
 }
 
 export type FeedbackVote = "helpful" | "not-helpful" | null;

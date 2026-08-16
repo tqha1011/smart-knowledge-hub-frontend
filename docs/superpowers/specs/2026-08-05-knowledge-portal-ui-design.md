@@ -118,6 +118,8 @@ Both light and dark mode use the same structure; only the token values swap (see
 
 **Form factor: floating slide-over panel** (420px, right-aligned), same pattern as the Ask AI panel — opened by clicking a row in the Document Library table, dims/blurs the table behind it, closes back to exactly where the user was.
 
+**Description:** the document's description (set via the Upload/Edit panel's Description field) renders as a short paragraph directly under the title, above the metadata grid — it's prose about the document, not a metadata field, so it sits outside the 2-column grid. Not shown when empty.
+
 **Metadata + actions only — no embedded file preview.** The panel shows Space, file type/size, updated-by, and updated-date in a 2-column grid, then an action row: **Open/Download** (primary — opens the original file in a new tab/app), **Edit details**, **Replace file**, **Delete** (danger-styled). Opening the actual file content is delegated to the browser/OS, not rendered inline — keeps the panel simple and avoids building a PDF/doc viewer for this pass.
 
 **"Cited by the Assistant"** section below the actions: a list of the questions the RAG Assistant has answered using this document, each showing the question text, how many times it's been asked, and when it was last asked. This reuses the same underlying citation-tracking data as the Document Library's "Cited" column count — this panel is where that count becomes a real list.
@@ -145,13 +147,13 @@ No version history in this pass (considered and deliberately deferred — not re
 
 **Form factor: floating slide-over panel** (440px, right-aligned, dims/blurs the page behind it), not a dedicated full page. Opens from the "Ask AI" nav item or its mobile bottom-tab equivalent; the current page stays mounted behind it (visible when the panel closes), so a user can ask a question without losing their place in the Document Library or elsewhere.
 
-**Scope:** answers are drawn from **all Spaces the user has access to** (not just the currently selected Space) — this is more useful than a single-Space-scoped assistant, but requires every citation to show which Space it came from so multi-Space answers aren't confusing.
+**Scope:** answers are drawn only from the **currently selected Space** — switching Spaces switches what the Assistant can see. Since every citation is guaranteed to come from that one Space (already named in the panel header), there's no per-citation Space badge to disambiguate.
 
 **Panel structure:**
 
-- Header: "Ask AI" (Fraunces) + small scope line (`Searching across N spaces you have access to`) + close button.
+- Header: "Ask AI" (Fraunces) + small scope line (`Searching {Space name}`) + close button.
 - Scrollable thread: user messages (right-aligned, accent-filled bubble), assistant messages (left-aligned, neutral bubble).
-- Assistant answers contain **inline numbered citation chips** (amber) at the exact claim they support, plus a **sources list** underneath — each source repeats its chip number, document title, and a Space badge.
+- Assistant answers contain **inline numbered citation chips** (amber) at the exact claim they support, plus a **sources list** underneath — each source repeats its chip number and document title.
 - **Feedback row** under every assistant answer: 👍 / 👎, always visible. Clicking 👎 reveals an optional comment textarea + "Send feedback" button; 👍 needs no comment. Feedback is stored and surfaced only as an aggregate helpful/not-helpful ratio on the (future, out-of-scope) Admin dashboard — there is no per-item Editor review workflow for feedback in this MVP.
 - When the Assistant has no confident source, it says so explicitly and the question is automatically logged into that Space's **Needs attention** knowledge-gap queue (the same queue Editors triage in Document Library) — this is a separate mechanism from thumbs-down feedback, not a merged one.
 - Composer: single-line input + Send button, pinned to the bottom of the panel.

@@ -17,7 +17,7 @@ interface AskAiPanelBodyProps {
     comment?: string,
   ) => void;
   onClose: () => void;
-  spaceCount: number;
+  spaceName: string;
   prefersReducedMotion: boolean | null;
 }
 
@@ -33,7 +33,7 @@ export function AskAiPanelBody({
   onSend,
   onFeedback,
   onClose,
-  spaceCount,
+  spaceName,
   prefersReducedMotion,
 }: AskAiPanelBodyProps) {
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -77,10 +77,7 @@ export function AskAiPanelBody({
               <Sparkles size={18} className="text-accent" />
               Ask AI
             </h2>
-            {/* MOCK: space count comes from mockCurrentUser.memberships.length */}
-            <p className="text-ink-muted text-sm">
-              Searching across {spaceCount} spaces you have access to
-            </p>
+            <p className="text-ink-muted text-sm">Searching {spaceName}</p>
           </div>
           <button
             type="button"
@@ -95,7 +92,7 @@ export function AskAiPanelBody({
         <div className="flex-1 space-y-3 overflow-y-auto py-2">
           {messages.length === 0 ? (
             <div className="text-ink-muted flex h-full items-center justify-center text-center text-sm">
-              Ask a question about any document you have access to.
+              Ask a question about a document in this space.
             </div>
           ) : (
             messages.map((message) =>
