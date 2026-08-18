@@ -103,3 +103,12 @@ export function fileTypeFromFileName(
   if (!extension) return null;
   return FILE_EXTENSION_TYPE[extension] ?? null;
 }
+
+// Loose but real email-shape check for the restricted-visibility email
+// list — not a full RFC 5322 validator, just enough to catch obvious typos
+// (missing "@", no domain) before a value becomes a chip.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidEmail(email: string): boolean {
+  return EMAIL_PATTERN.test(email);
+}

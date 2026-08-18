@@ -1,4 +1,4 @@
-import { MoreHorizontal } from "lucide-react";
+import { Lock, MoreHorizontal } from "lucide-react";
 import type { DocumentSummary } from "../../types";
 import {
   FILE_TYPE_BADGE_CLASS,
@@ -68,6 +68,14 @@ export function DocumentTable({
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
                     <span className="truncate">{baseName}</span>
+                    {doc.visibility === "restricted" && (
+                      <Lock
+                        size={12}
+                        className="text-ink-muted shrink-0"
+                        role="img"
+                        aria-label="Restricted access"
+                      />
+                    )}
                   </button>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">

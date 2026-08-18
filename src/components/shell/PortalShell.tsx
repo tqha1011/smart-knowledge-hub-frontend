@@ -147,6 +147,8 @@ export function PortalShell() {
       updatedAt: new Date().toISOString(),
       fileSizeBytes: input.fileSizeBytes,
       citationCount: 0,
+      visibility: input.visibility,
+      restrictedEmails: input.restrictedEmails,
     };
     setDocuments((prev) => [newDocument, ...prev]);
     toast.success("Document uploaded.");
@@ -164,6 +166,8 @@ export function PortalShell() {
               name: updates.name,
               category: updates.category,
               description: updates.description,
+              visibility: updates.visibility,
+              restrictedEmails: updates.restrictedEmails,
               updatedBy: {
                 name: currentUser.name,
                 avatarInitials: currentUser.avatarInitials,

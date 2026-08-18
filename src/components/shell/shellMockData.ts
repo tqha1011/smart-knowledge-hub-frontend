@@ -255,6 +255,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-08-05T10:00:00Z",
     fileSizeBytes: 842432,
     citationCount: countCitations("doc-1"),
+    visibility: "public",
+    restrictedEmails: [],
   },
   {
     id: "doc-2",
@@ -269,6 +271,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-07-28T10:00:00Z",
     fileSizeBytes: 128540,
     citationCount: countCitations("doc-2"),
+    visibility: "public",
+    restrictedEmails: [],
   },
   {
     id: "doc-3",
@@ -283,6 +287,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-06-14T10:00:00Z",
     fileSizeBytes: 305152,
     citationCount: countCitations("doc-3"),
+    visibility: "public",
+    restrictedEmails: [],
   },
   {
     id: "doc-4",
@@ -297,6 +303,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-08-09T10:00:00Z",
     fileSizeBytes: 1887436,
     citationCount: countCitations("doc-4"),
+    visibility: "restricted",
+    restrictedEmails: ["sam.ortiz@company.com", "priya.nair@company.com"],
   },
   {
     id: "doc-5",
@@ -311,6 +319,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-07-01T10:00:00Z",
     fileSizeBytes: 412672,
     citationCount: countCitations("doc-5"),
+    visibility: "public",
+    restrictedEmails: [],
   },
   {
     id: "doc-6",
@@ -325,6 +335,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-08-02T10:00:00Z",
     fileSizeBytes: 256000,
     citationCount: countCitations("doc-6"),
+    visibility: "public",
+    restrictedEmails: [],
   },
   {
     id: "doc-7",
@@ -339,6 +351,8 @@ export const mockDocuments: DocumentSummary[] = [
     updatedAt: "2026-08-10T10:00:00Z",
     fileSizeBytes: 2202009,
     citationCount: countCitations("doc-7"),
+    visibility: "public",
+    restrictedEmails: [],
   },
 ];
 

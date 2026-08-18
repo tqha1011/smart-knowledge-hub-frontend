@@ -1367,3 +1367,30 @@ Confirm by reading the code:
 git add src/components/documentComponent/DocumentLibrary.tsx src/components/shell/PortalShell.tsx
 git commit -m "feat: wire DocumentFormPanel into DocumentLibrary"
 ```
+
+---
+
+## Task 8: Document visibility (Public/Restricted)
+
+**Added after this plan's original 7 tasks shipped** — not in the original design spec's Upload/Edit panel section. A document gets a `visibility` of `"public"` or `"restricted"`; restricted documents carry a `restrictedEmails: string[]` allowlist. No real backend enforcement — this only adds the data field plus UI to set and display it, same scope boundary as "Replace file" staying a stub.
+
+**Files:**
+
+- Modified: `src/types/commonType/document.ts`, `src/types/index.ts`
+- Modified: `src/components/shell/shellMockData.ts` (7 mock documents backfilled; `doc-4` set to `restricted` as a demo case)
+- Modified: `src/components/documentComponent/documentDisplay.ts` (added `isValidEmail`)
+- Created: `src/components/documentComponent/EmailTagInput.tsx`
+- Modified: `src/components/documentComponent/DocumentFormPanel.tsx` (Visibility toggle + conditional `EmailTagInput`, submit validation requiring ≥1 email when restricted)
+- Modified: `src/components/documentComponent/DocumentDetailPanel.tsx` (read-only Visibility field + "Visible to" email list)
+- Modified: `src/components/documentComponent/DocumentTable.tsx` (lock icon next to the name for restricted documents)
+- Modified: `src/components/shell/PortalShell.tsx` (`handleCreateDocument`/`handleUpdateDocument` carry the two new fields)
+
+- [x] **Step 1: Extend types** — `DocumentVisibility = "public" | "restricted"`; `DocumentSummary`, `NewDocumentInput`, `DocumentUpdateInput` gain `visibility` and `restrictedEmails: string[]`.
+- [x] **Step 2: Backfill mock data** — all 7 documents get `visibility`/`restrictedEmails`; `doc-4` restricted with two sample emails as a demo case.
+- [x] **Step 3: `isValidEmail` helper** — loose but real email-shape regex in `documentDisplay.ts`, used by `EmailTagInput`.
+- [x] **Step 4: `EmailTagInput` component** — chip-style email list; Enter/comma commits the draft after validating shape and rejecting duplicates (`toast.error` on either); Backspace on an empty draft removes the last chip; each chip has its own remove button.
+- [x] **Step 5: Wire into `DocumentFormPanel`** — Visibility field (two-button toggle) placed after Category, before Description; `EmailTagInput` renders only when Restricted is selected; submit blocks with `toast.error` when Restricted has zero emails; both `onCreate` payloads (upload/write) and `onUpdate` carry `visibility`/`restrictedEmails`.
+- [x] **Step 6: Show in `DocumentDetailPanel`** — read-only "Visibility" field (with a lock glyph when restricted) in the metadata grid; a "Visible to" email-chip list renders below the grid when restricted.
+- [x] **Step 7: Lock icon in `DocumentTable`** — a small lock icon renders next to the document name when `visibility === "restricted"`.
+- [x] **Step 8: Wire `PortalShell`** — `handleCreateDocument` copies `input.visibility`/`input.restrictedEmails` onto the new `DocumentSummary`; `handleUpdateDocument` copies `updates.visibility`/`updates.restrictedEmails` onto the matched document.
+- [x] **Step 9: Type-check and lint** — `npm run build && npm run lint`, both pass.

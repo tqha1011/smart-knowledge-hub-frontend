@@ -7,6 +7,8 @@ export type DocumentFileType = "pdf" | "docx" | "markdown";
 
 export type DocumentStatus = "processing" | "ready" | "failed";
 
+export type DocumentVisibility = "public" | "restricted";
+
 // Table row shape for the Document Library.
 export interface DocumentSummary {
   id: string;
@@ -22,6 +24,9 @@ export interface DocumentSummary {
   /** Raw file size in bytes — formatted to KB/MB in the Document detail panel. */
   fileSizeBytes: number;
   citationCount: number;
+  visibility: DocumentVisibility;
+  /** Emails allowed to view this document — only meaningful when visibility is "restricted"; empty when "public". */
+  restrictedEmails: string[];
 }
 
 // A knowledge-gap queue item — logged automatically when the (not yet
@@ -57,6 +62,8 @@ export interface NewDocumentInput {
   description: string;
   fileType: DocumentFileType;
   fileSizeBytes: number;
+  visibility: DocumentVisibility;
+  restrictedEmails: string[];
 }
 
 // Payload submitted by the Upload/Edit panel when editing an existing
@@ -67,4 +74,6 @@ export interface DocumentUpdateInput {
   name: string;
   category: string;
   description: string;
+  visibility: DocumentVisibility;
+  restrictedEmails: string[];
 }
