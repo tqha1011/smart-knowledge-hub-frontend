@@ -6,11 +6,13 @@ import { toast } from "react-toastify";
 import type {
   DocumentSummary,
   DocumentUpdateInput,
+  DocumentVisibility,
   NewDocumentInput,
 } from "../../types";
 import { STATUS_BADGE, fileTypeFromFileName } from "./documentDisplay";
 import { FileDropzone } from "./FileDropzone";
 import { MarkdownContentEditor } from "./MarkdownContentEditor";
+import { EmailTagInput } from "./EmailTagInput";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface DocumentFormPanelProps {
@@ -81,6 +83,12 @@ function DocumentFormPanelBody({
   const [name, setName] = useState(document?.name ?? "");
   const [category, setCategory] = useState(document?.category ?? "");
   const [description, setDescription] = useState(document?.description ?? "");
+  const [visibility, setVisibility] = useState<DocumentVisibility>(
+    document?.visibility ?? "public",
+  );
+  const [restrictedEmails, setRestrictedEmails] = useState<string[]>(
+    document?.restrictedEmails ?? [],
+  );
   const [contentMode, setContentMode] = useState<"upload" | "write">("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [markdownContent, setMarkdownContent] = useState("");
@@ -102,6 +110,10 @@ function DocumentFormPanelBody({
       toast.error("Category is required.");
       return;
     }
+    if (visibility === "restricted" && restrictedEmails.length === 0) {
+      toast.error("Add at least one email for restricted access.");
+      return;
+    }
 
     if (document) {
       hasSubmittedRef.current = true;
@@ -109,6 +121,8 @@ function DocumentFormPanelBody({
         name: name.trim(),
         category: category.trim(),
         description: description.trim(),
+        visibility,
+        restrictedEmails,
       });
       onClose();
       return;
@@ -131,6 +145,8 @@ function DocumentFormPanelBody({
         description: description.trim(),
         fileType,
         fileSizeBytes: selectedFile.size,
+        visibility,
+        restrictedEmails,
       });
     } else {
       if (!markdownContent.trim()) {
@@ -144,6 +160,8 @@ function DocumentFormPanelBody({
         description: description.trim(),
         fileType: "markdown",
         fileSizeBytes: new Blob([markdownContent]).size,
+        visibility,
+        restrictedEmails,
       });
     }
     onClose();
@@ -267,6 +285,40 @@ function DocumentFormPanelBody({
                 <option key={option} value={option} />
               ))}
             </datalist>
+          </div>
+          <div>
+            <span className="text-ink-muted text-xs font-medium">
+              Visibility
+            </span>
+            <div className="mt-1 flex gap-1.5">
+              {(["public", "restricted"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setVisibility(option)}
+                  className={`flex-1 rounded-md border px-3 py-2 text-sm font-semibold capitalize ${
+                    visibility === option
+                      ? "border-accent bg-accent-soft text-accent"
+                      : "border-border text-ink-muted hover:bg-surface-sunken"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {visibility === "restricted" && (
+              <div className="mt-2">
+                <span className="text-ink-muted text-xs font-medium">
+                  Visible to
+                </span>
+                <div className="mt-1">
+                  <EmailTagInput
+                    emails={restrictedEmails}
+                    onChange={setRestrictedEmails}
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Download, Pencil, RefreshCw, Trash2, X } from "lucide-react";
+import { Download, Lock, Pencil, RefreshCw, Trash2, X } from "lucide-react";
 import type { DocumentCitation, DocumentSummary, Space } from "../../types";
 import {
   FILE_TYPE_ICON,
@@ -170,6 +170,15 @@ function DocumentDetailPanelBody({
               {formatRelativeDate(document.updatedAt)}
             </dd>
           </div>
+          <div>
+            <dt className="text-ink-muted text-xs">Visibility</dt>
+            <dd className="text-ink mt-0.5 flex items-center gap-1 font-medium capitalize">
+              {document.visibility === "restricted" && (
+                <Lock size={12} className="text-ink-muted" />
+              )}
+              {document.visibility}
+            </dd>
+          </div>
           <div className="col-span-2">
             <dt className="text-ink-muted text-xs">Updated by</dt>
             <dd className="mt-1 flex items-center gap-2">
@@ -182,6 +191,22 @@ function DocumentDetailPanelBody({
             </dd>
           </div>
         </dl>
+
+        {document.visibility === "restricted" && (
+          <div className="mt-4">
+            <p className="text-ink-muted text-xs">Visible to</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {document.restrictedEmails.map((email) => (
+                <span
+                  key={email}
+                  className="bg-surface-sunken text-ink rounded-full px-2 py-0.5 text-xs font-medium"
+                >
+                  {email}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 flex flex-col gap-2">
           <button

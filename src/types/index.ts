@@ -17,6 +17,7 @@ export type {
   DocumentAuthor,
   DocumentFileType,
   DocumentStatus,
+  DocumentVisibility,
   DocumentSummary,
   KnowledgeGapItem,
   DocumentCitation,
