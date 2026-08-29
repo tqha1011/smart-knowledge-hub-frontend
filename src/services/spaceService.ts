@@ -1,83 +1,82 @@
+import { handleApiError } from "../shared/handleApiError";
+import type { PaginationResponse } from "../types/commonType/pagination";
 import type {
-  CreateSpaceDto,
   CreateSpaceTypeDto,
-  Space,
-  SpaceType,
-} from "../types";
-import {
-  mockCurrentUser,
-  mockSpaceTypes,
-  spaceColorPalette,
-} from "../components/shell/shellMockData";
+  RequestSpaceDto,
+  SpaceListItemDto,
+  SpaceRole,
+} from "../types/commonType/space";
+import api from "./api";
 
-// MOCK: in-memory stand-in for a `space_types` table — persists for the
-// session (not across reloads) the same way `mockCurrentUser` does.
-let spaceTypesStore: SpaceType[] = [...mockSpaceTypes];
-let nextColorIndex = 0;
+const alias = "knowledge-spaces";
+export const knowledgeSpaceService = {
+  createSpace: async (newSpace: RequestSpaceDto) => {
+    try {
+      const response = await api.post(`/${alias}`, {
+        name: newSpace.name,
+        description: newSpace.description,
+        typePublicId: newSpace.typePublicId,
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 
-function slugify(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+  updateSpace: async (publicId: string, updateSpace: RequestSpaceDto) => {
+    try {
+      const response = await api.put(`/${alias}/${publicId}`, {
+        name: updateSpace.name,
+        description: updateSpace.description,
+        typePublicId: updateSpace.typePublicId,
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 
-function generateId(name: string): string {
-  return `${slugify(name)}-${Date.now().toString(36)}`;
-}
+  getUserRole: async (spacePublicId: string) => {
+    try {
+      const response = await api.get<SpaceRole>(
+        `/${alias}/${spacePublicId}/role`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 
-// MOCK: stands in for `GET /space-types`.
-export async function listSpaceTypes(): Promise<SpaceType[]> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  return spaceTypesStore;
-}
+  getUserSpaces: async () => {
+    try {
+      const response = await api.get<PaginationResponse<SpaceListItemDto>>(
+        `/${alias}/`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+};
 
-// MOCK: stands in for `POST /space-types`.
-export async function createSpaceType({
-  name,
-}: CreateSpaceTypeDto): Promise<SpaceType> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  const trimmedName = name.trim();
-  if (!trimmedName) {
-    throw new Error("Type name is required.");
-  }
-  const newType: SpaceType = { id: generateId(trimmedName), name: trimmedName };
-  spaceTypesStore = [...spaceTypesStore, newType];
-  return newType;
-}
+export const knowledgeSpaceTypeService = {
+  createType: async (newType: CreateSpaceTypeDto) => {
+    try {
+      const response = await api.post(`/${alias}/types`, {
+        name: newType.name,
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 
-// MOCK: stands in for `POST /spaces`. Also grants the creating Admin an
-// Editor membership so the new Space is immediately reachable — real
-// membership provisioning belongs in Users & Roles, not this form.
-export async function createSpace({
-  name,
-  description,
-  typeId,
-}: CreateSpaceDto): Promise<Space> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  const trimmedName = name.trim();
-  if (!trimmedName) {
-    throw new Error("Space name is required.");
-  }
-  const type = spaceTypesStore.find((item) => item.id === typeId);
-  if (!type) {
-    throw new Error("Choose a space type.");
-  }
-
-  const newSpace: Space = {
-    id: generateId(trimmedName),
-    name: trimmedName,
-    description: description?.trim() || undefined,
-    type,
-    colorDot: spaceColorPalette[nextColorIndex % spaceColorPalette.length],
-  };
-  nextColorIndex += 1;
-
-  mockCurrentUser.memberships = [
-    ...mockCurrentUser.memberships,
-    { space: newSpace, role: "Editor" },
-  ];
-
-  return newSpace;
-}
+  getListTypes: async () => {
+    try {
+      const response = await api.get(`/${alias}/types`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+};

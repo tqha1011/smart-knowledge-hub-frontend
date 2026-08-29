@@ -51,8 +51,8 @@ export const mockCurrentUser: CurrentUser = {
   isAdmin: true,
   memberships: [
     { space: mockSpaces[0], role: "Editor" },
-    { space: mockSpaces[1], role: "Employee" },
-    { space: mockSpaces[2], role: "Employee" },
+    { space: mockSpaces[1], role: "Viewer" },
+    { space: mockSpaces[2], role: "Viewer" },
   ],
 };
 
@@ -117,7 +117,7 @@ export let mockOrgUsers: OrgUser[] = [
     avatarInitials: "CK",
     isAdmin: false,
     status: "active",
-    memberships: [{ space: mockSpaces[1], role: "Employee" }],
+    memberships: [{ space: mockSpaces[1], role: "Editor" }],
   },
   {
     id: "u7",
@@ -126,7 +126,7 @@ export let mockOrgUsers: OrgUser[] = [
     avatarInitials: "TB",
     isAdmin: false,
     status: "invited",
-    memberships: [{ space: mockSpaces[2], role: "Employee" }],
+    memberships: [{ space: mockSpaces[2], role: "Editor" }],
   },
 ];
 

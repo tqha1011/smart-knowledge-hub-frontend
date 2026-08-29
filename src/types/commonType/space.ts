@@ -1,6 +1,6 @@
 // Editor/Employee only exist as a per-Space assignment — there is no global
 // "Editor" or "Employee" role outside the context of a specific Space.
-export type SpaceRole = "Editor" | "Employee";
+export type SpaceRole = "Owner" | "Editor" | "Viewer";
 
 // Classifies what kind of Space this is (e.g. Department, Project). Admins
 // can add new types inline from the Create Space panel.
@@ -23,12 +23,19 @@ export interface SpaceMembership {
   role: SpaceRole;
 }
 
-export interface CreateSpaceDto {
+export interface RequestSpaceDto {
   name: string;
-  description?: string;
-  typeId: string;
+  description?: string | null;
+  typePublicId: string;
 }
 
 export interface CreateSpaceTypeDto {
   name: string;
+}
+
+export interface SpaceListItemDto {
+  publicId: string;
+  name: string;
+  totalDocuments: number;
+  role: SpaceRole;
 }
