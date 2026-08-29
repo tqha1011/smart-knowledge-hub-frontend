@@ -25,8 +25,8 @@ export interface SpaceMembership {
 
 export interface CreateSpaceDto {
   name: string;
-  description?: string;
-  typeId: string;
+  description?: string | null;
+  typePublicId: string;
 }
 
 export interface CreateSpaceTypeDto {
