@@ -1,7 +1,10 @@
 import { handleApiError } from "../shared/handleApiError";
+import type { PaginationResponse } from "../types/commonType/pagination";
 import type {
   CreateSpaceTypeDto,
   RequestSpaceDto,
+  SpaceListItemDto,
+  SpaceRole,
 } from "../types/commonType/space";
 import api from "./api";
 
@@ -35,7 +38,20 @@ export const knowledgeSpaceService = {
 
   getUserRole: async (spacePublicId: string) => {
     try {
-      const response = await api.get(`/${alias}/${spacePublicId}/role`);
+      const response = await api.get<SpaceRole>(
+        `/${alias}/${spacePublicId}/role`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getUserSpaces: async () => {
+    try {
+      const response = await api.get<PaginationResponse<SpaceListItemDto>>(
+        `/${alias}/`,
+      );
       return response.data;
     } catch (error) {
       throw handleApiError(error);

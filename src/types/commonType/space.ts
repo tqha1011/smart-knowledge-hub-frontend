@@ -32,3 +32,10 @@ export interface RequestSpaceDto {
 export interface CreateSpaceTypeDto {
   name: string;
 }
+
+export interface SpaceListItemDto {
+  publicId: string;
+  name: string;
+  totalDocuments: number;
+  role: SpaceRole;
+}
