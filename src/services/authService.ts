@@ -1,39 +1,42 @@
-import type { InviteContextDto, LoginDto, SetPasswordDto } from "../types";
+import axios from "axios";
+import type { LoginDto } from "../types";
+import type { ApiErrorResponse } from "../types/commonType/apiResponse";
+import api from "./api";
 
 export interface LoginResult {
   accessToken: string;
 }
 
-// MOCK: stands in for `POST /auth/login` — no backend to check credentials
-// against yet, so any non-empty email/password succeeds.
-export async function login(credentials: LoginDto): Promise<LoginResult> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  if (!credentials.email.trim() || !credentials.password) {
-    throw new Error("Incorrect email or password. Try again.");
-  }
-  return { accessToken: "mock-access-token" };
-}
-
-// MOCK: stands in for `GET /invites/:token` — normally resolves who's being
-// invited, to which Space, and with what role from the invite token itself.
-export async function resolveInvite(
-  token: string | null,
-): Promise<InviteContextDto> {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  if (!token) {
-    throw new Error("This invite link is invalid or has expired.");
-  }
-  return {
-    email: "new.hire@company.com",
-    spaceName: "Engineering",
-    role: "Editor",
-  };
-}
-
-// MOCK: stands in for `POST /auth/set-password`.
-export async function setPassword({ password }: SetPasswordDto): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  if (password.length < 8) {
-    throw new Error("Password must be at least 8 characters.");
-  }
-}
+export const authService = {
+  login: async (credentials: LoginDto) => {
+    try {
+      const response = await api.post("/auth/login", {
+        email: credentials.email,
+        password: credentials.password,
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        // axios will return two types of errors:
+        // response errors (server responded with a status code outside the 2xx range)
+        // network errors (no response received)
+        if (error.response) {
+          const errorData = {
+            statusCode: error.response.status,
+            message: error.response.data.message || "An error occurred",
+            error: error.response.data.error || "Bad Request",
+          } as ApiErrorResponse;
+          throw errorData;
+        }
+        // handle network error (no response)
+        throw {
+          statusCode: 0,
+          message:
+            "Network error: Unable to reach the server. Please check your internet connection.",
+          error: "Network Error",
+        } as ApiErrorResponse;
+      }
+      throw error;
+    }
+  },
+};
