@@ -3,6 +3,8 @@ import type { PaginationResponse } from "../types/commonType/pagination";
 import type {
   DocumentListItemDto,
   DocumentDetailsDto,
+  DocumentUploadUrlRequest,
+  DocumentUploadUrlResponse,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -28,6 +30,32 @@ export const documentService = {
     try {
       const response = await api.get<DocumentDetailsDto>(
         `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getUploadUrl: async (
+    spacePublicId: string,
+    request: DocumentUploadUrlRequest,
+  ) => {
+    try {
+      const response = await api.post<DocumentUploadUrlResponse>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/upload-url`,
+        request,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getDownloadUrl: async (documentPublicId: string, spacePublicId: string) => {
+    try {
+      const response = await api.get<string>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/download-url`,
       );
       return response.data;
     } catch (error) {

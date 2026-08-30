@@ -78,6 +78,18 @@ export interface DocumentUpdateInput {
   restrictedEmails: string[];
 }
 
+export interface DocumentUploadUrlResponse {
+  uploadUrl: string;
+  storageKey: string;
+  expiresAt: Date;
+}
+
+export interface DocumentUploadUrlRequest {
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+}
+
 export interface DocumentListItemDto {
   publicId: string;
   title: string;
