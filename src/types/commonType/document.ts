@@ -9,6 +9,8 @@ export type DocumentStatus = "processing" | "ready" | "failed";
 
 export type DocumentVisibility = "Public" | "Restricted";
 
+export type DocumentPermission = "Read" | "Edit" | "Manage";
+
 // Table row shape for the Document Library.
 export interface DocumentSummary {
   id: string;
@@ -138,4 +140,13 @@ export interface DocumentDetailsDto {
     name: string;
     lastAsked: Date;
   }[];
+}
+
+export interface DocumentPermissionRequest {
+  userPublicId: string;
+  permission: DocumentPermission;
+}
+
+export interface DocumentPermissionRequestBody {
+  permissions: DocumentPermissionRequest[];
 }

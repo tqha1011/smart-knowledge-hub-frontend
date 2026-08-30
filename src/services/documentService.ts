@@ -6,6 +6,8 @@ import type {
   DocumentUploadUrlRequest,
   DocumentUploadUrlResponse,
   DocumentCreateRequest,
+  DocumentPermissionRequest,
+  DocumentPermissionRequestBody,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -72,6 +74,23 @@ export const documentService = {
       const response = await api.post<DocumentDetailsDto>(
         `${firstAlias}/${spacePublicId}/${afterAlias}`,
         request,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  grantDocumentPermissions: async (
+    spacePublicId: string,
+    documentPublicId: string,
+    request: DocumentPermissionRequest[],
+  ) => {
+    try {
+      const body: DocumentPermissionRequestBody = { permissions: request };
+      const response = await api.post(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/permissions`,
+        body,
       );
       return response.data;
     } catch (error) {
