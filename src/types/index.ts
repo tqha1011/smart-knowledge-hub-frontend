@@ -24,6 +24,7 @@ export type {
   NewDocumentInput,
   DocumentUpdateInput,
 } from "./commonType/document";
+export type { CategoryDto, CreateCategoryRequest } from "./commonType/category";
 export type {
   AskAiCitation,
   FeedbackVote,

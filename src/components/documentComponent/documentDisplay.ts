@@ -2,24 +2,27 @@ import { File, FileCode, FileText } from "lucide-react";
 import type { DocumentFileType, DocumentStatus } from "../../types";
 
 export const FILE_TYPE_ICON: Record<DocumentFileType, typeof FileText> = {
-  pdf: FileText,
-  docx: File,
-  markdown: FileCode,
+  PDF: FileText,
+  DOCX: File,
+  MD: FileCode,
+  TXT: FileText,
 };
 
 export const FILE_TYPE_LABEL: Record<DocumentFileType, string> = {
-  pdf: "PDF",
-  docx: "Word document",
-  markdown: "Markdown",
+  PDF: "PDF",
+  DOCX: "Word document",
+  MD: "Markdown",
+  TXT: "Text",
 };
 
 // Color-codes the Type column so the three file types are distinguishable
 // at a glance, not just by icon shape. Uses the --color-filetype-* tokens
 // from src/index.css (same bg/fg pill pattern as STATUS_BADGE below).
 export const FILE_TYPE_BADGE_CLASS: Record<DocumentFileType, string> = {
-  pdf: "bg-filetype-pdf-bg text-filetype-pdf-fg",
-  docx: "bg-filetype-docx-bg text-filetype-docx-fg",
-  markdown: "bg-filetype-markdown-bg text-filetype-markdown-fg",
+  PDF: "bg-filetype-pdf-bg text-filetype-pdf-fg",
+  DOCX: "bg-filetype-docx-bg text-filetype-docx-fg",
+  MD: "bg-filetype-markdown-bg text-filetype-markdown-fg",
+  TXT: "bg-filetype-txt-bg text-filetype-txt-fg",
 };
 
 // Splits a document's display name at its last "." so the Document
@@ -88,10 +91,10 @@ export const STATUS_BADGE: Record<
 export const MAX_UPLOAD_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 const FILE_EXTENSION_TYPE: Record<string, DocumentFileType> = {
-  pdf: "pdf",
-  docx: "docx",
-  md: "markdown",
-  markdown: "markdown",
+  pdf: "PDF",
+  docx: "DOCX",
+  txt: "TXT",
+  markdown: "MD",
 };
 
 // Derives a DocumentFileType from a file name's extension, or null if the
