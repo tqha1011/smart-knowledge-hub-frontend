@@ -22,4 +22,15 @@ export const categoryService = {
       throw handleApiError(error);
     }
   },
+
+  getListCategory: async (spacePublicId: string) => {
+    try {
+      const response = await api.get<CategoryDto[]>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };

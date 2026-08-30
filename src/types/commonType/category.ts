@@ -6,3 +6,8 @@ export interface CategoryDto {
 export interface CreateCategoryRequest {
   name: string;
 }
+
+export interface CategoryItemDto {
+  publicId: string;
+  name: string;
+}
