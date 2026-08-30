@@ -5,7 +5,7 @@ export interface DocumentAuthor {
 
 export type DocumentFileType = "PDF" | "DOCX" | "MD" | "TXT";
 
-export type DocumentStatus = "processing" | "ready" | "failed";
+export type DocumentStatus = "Processing" | "Ready" | "Failed";
 
 export type DocumentVisibility = "Public" | "Restricted";
 
@@ -105,6 +105,7 @@ export interface DocumentListItemDto {
   publicId: string;
   title: string;
   fileType: DocumentFileType;
+  visibility: DocumentVisibility;
   lastUpdated: Date;
   category: {
     publicId: string;
@@ -122,6 +123,8 @@ export interface DocumentDetailsDto {
   publicId: string;
   title: string;
   description: string | null;
+  visibility: DocumentVisibility;
+  status: DocumentStatus;
   fileType: DocumentFileType;
   fileSize: number;
   content: string;
@@ -139,6 +142,12 @@ export interface DocumentDetailsDto {
     publicId: string;
     name: string;
     lastAsked: Date;
+  }[];
+
+  permissions: {
+    userPublicId: string;
+    email: string;
+    permission: DocumentPermission;
   }[];
 }
 
