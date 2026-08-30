@@ -7,7 +7,7 @@ export type DocumentFileType = "PDF" | "DOCX" | "MD" | "TXT";
 
 export type DocumentStatus = "processing" | "ready" | "failed";
 
-export type DocumentVisibility = "public" | "restricted";
+export type DocumentVisibility = "Public" | "Restricted";
 
 // Table row shape for the Document Library.
 export interface DocumentSummary {
@@ -88,6 +88,15 @@ export interface DocumentUploadUrlRequest {
   fileName: string;
   contentType: string;
   fileSize: number;
+}
+
+export interface DocumentCreateRequest {
+  name: string;
+  description: string | null;
+  content: string | null;
+  categoryPublicId: string;
+  storageKey: string; // get from upload url response
+  visibility: DocumentVisibility;
 }
 
 export interface DocumentListItemDto {

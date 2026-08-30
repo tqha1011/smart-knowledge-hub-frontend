@@ -5,6 +5,7 @@ import type {
   DocumentDetailsDto,
   DocumentUploadUrlRequest,
   DocumentUploadUrlResponse,
+  DocumentCreateRequest,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -56,6 +57,21 @@ export const documentService = {
     try {
       const response = await api.get<string>(
         `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/download-url`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  createDocument: async (
+    spacePublicId: string,
+    request: DocumentCreateRequest,
+  ) => {
+    try {
+      const response = await api.post<DocumentDetailsDto>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}`,
+        request,
       );
       return response.data;
     } catch (error) {
