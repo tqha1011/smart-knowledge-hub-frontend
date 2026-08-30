@@ -3,7 +3,7 @@ export interface DocumentAuthor {
   avatarInitials: string;
 }
 
-export type DocumentFileType = "pdf" | "docx" | "markdown";
+export type DocumentFileType = "PDF" | "DOCX" | "MD" | "TXT";
 
 export type DocumentStatus = "processing" | "ready" | "failed";
 
@@ -76,4 +76,45 @@ export interface DocumentUpdateInput {
   description: string;
   visibility: DocumentVisibility;
   restrictedEmails: string[];
+}
+
+export interface DocumentListItemDto {
+  publicId: string;
+  title: string;
+  fileType: DocumentFileType;
+  lastUpdated: Date;
+  category: {
+    publicId: string;
+    name: string;
+  };
+  updatedBy: {
+    publicId: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  cited: number;
+}
+
+export interface DocumentDetailsDto {
+  publicId: string;
+  title: string;
+  description: string | null;
+  fileType: DocumentFileType;
+  fileSize: number;
+  content: string;
+  lastUpdated: Date;
+  category: {
+    publicId: string;
+    name: string;
+  };
+  updatedBy: {
+    publicId: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  citedQuestion: {
+    publicId: string;
+    name: string;
+    lastAsked: Date;
+  }[];
 }
