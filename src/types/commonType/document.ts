@@ -73,11 +73,11 @@ export interface NewDocumentInput {
 // "Edit details" action). File content/type is not editable here — that's
 // the separate, still-stubbed "Replace file" action.
 export interface DocumentUpdateInput {
-  name: string;
-  category: string;
-  description: string;
-  visibility: DocumentVisibility;
-  restrictedEmails: string[];
+  name?: string | null;
+  content?: string | null;
+  categoryPublicId?: string | null;
+  description?: string | null;
+  visibility?: DocumentVisibility | null;
 }
 
 export interface DocumentUploadUrlResponse {

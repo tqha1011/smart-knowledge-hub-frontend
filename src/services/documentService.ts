@@ -8,6 +8,7 @@ import type {
   DocumentCreateRequest,
   DocumentPermissionRequest,
   DocumentPermissionRequestBody,
+  DocumentUpdateInput,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -71,8 +72,24 @@ export const documentService = {
     request: DocumentCreateRequest,
   ) => {
     try {
-      const response = await api.post<DocumentDetailsDto>(
+      const response = await api.post<DocumentListItemDto>(
         `${firstAlias}/${spacePublicId}/${afterAlias}`,
+        request,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateDocument: async (
+    spacePublicId: string,
+    documentPublicId: string,
+    request: DocumentUpdateInput,
+  ) => {
+    try {
+      const response = await api.patch<DocumentListItemDto>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}`,
         request,
       );
       return response.data;
