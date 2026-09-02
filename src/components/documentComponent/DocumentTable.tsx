@@ -1,15 +1,16 @@
 import { Lock, MoreHorizontal } from "lucide-react";
-import type { DocumentSummary } from "../../types";
+import type { DocumentListItemDto } from "../../types";
 import {
   FILE_TYPE_BADGE_CLASS,
   FILE_TYPE_ICON,
   formatRelativeDate,
+  initialsFromName,
   splitDocumentName,
 } from "./documentDisplay";
 
 interface DocumentTableProps {
-  documents: DocumentSummary[];
-  onOpenDocument: (doc: DocumentSummary) => void;
+  documents: DocumentListItemDto[];
+  onOpenDocument: (doc: DocumentListItemDto) => void;
   /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
   canManage: boolean;
 }
@@ -56,19 +57,19 @@ export function DocumentTable({
         <tbody className="divide-border divide-y">
           {documents.map((doc) => {
             const Icon = FILE_TYPE_ICON[doc.fileType];
-            const { baseName, extension } = splitDocumentName(doc.name);
+            const { baseName, extension } = splitDocumentName(doc.title);
             return (
-              <tr key={doc.id} className="hover:bg-surface-sunken">
+              <tr key={doc.publicId} className="hover:bg-surface-sunken">
                 <td className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => onOpenDocument(doc)}
-                    title={doc.name}
+                    title={doc.title}
                     className="text-ink flex min-w-0 items-center gap-2 text-left font-medium"
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
                     <span className="truncate">{baseName}</span>
-                    {doc.visibility === "restricted" && (
+                    {doc.visibility === "Restricted" && (
                       <Lock
                         size={12}
                         className="text-ink-muted shrink-0"
@@ -87,25 +88,33 @@ export function DocumentTable({
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
                   <span className="bg-surface-sunken text-ink-muted rounded-md px-2 py-1 text-xs font-medium">
-                    {doc.category}
+                    {doc.category.name}
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 lg:table-cell">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="bg-avatar-bg text-avatar-fg flex size-6 items-center justify-center rounded-full text-[10px] font-semibold">
-                      {doc.updatedBy.avatarInitials}
-                    </span>
+                    {doc.updatedBy.avatarUrl ? (
+                      <img
+                        src={doc.updatedBy.avatarUrl}
+                        alt=""
+                        className="size-6 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="bg-avatar-bg text-avatar-fg flex size-6 items-center justify-center rounded-full text-[10px] font-semibold">
+                        {initialsFromName(doc.updatedBy.name)}
+                      </span>
+                    )}
                     <span className="text-ink-muted truncate">
                       {doc.updatedBy.name}
                     </span>
                   </div>
                 </td>
                 <td className="text-ink-muted px-4 py-3 whitespace-nowrap">
-                  {formatRelativeDate(doc.updatedAt)}
+                  {formatRelativeDate(doc.lastUpdated)}
                 </td>
                 <td className="px-4 py-3">
                   <span className="bg-citation-bg text-citation-fg rounded-full px-2 py-0.5 font-mono text-xs font-medium">
-                    {doc.citationCount}
+                    {doc.cited}
                   </span>
                 </td>
                 <td className="px-2 py-3">
@@ -113,7 +122,7 @@ export function DocumentTable({
                     <button
                       type="button"
                       onClick={() => onOpenDocument(doc)}
-                      aria-label={`Actions for ${doc.name}`}
+                      aria-label={`Actions for ${doc.title}`}
                       className="text-ink-muted hover:bg-surface flex size-8 items-center justify-center rounded-md"
                     >
                       <MoreHorizontal size={16} />

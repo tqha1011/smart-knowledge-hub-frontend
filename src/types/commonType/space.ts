@@ -39,3 +39,11 @@ export interface SpaceListItemDto {
   totalDocuments: number;
   role: SpaceRole;
 }
+
+export interface UserDataSpaceDto {
+  publicId: string;
+  email: string;
+  name: string;
+  role: SpaceRole;
+  joinedAt: Date;
+}

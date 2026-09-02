@@ -5,6 +5,7 @@ import type {
   RequestSpaceDto,
   SpaceListItemDto,
   SpaceRole,
+  UserDataSpaceDto,
 } from "../types/commonType/space";
 import api from "./api";
 
@@ -51,6 +52,17 @@ export const knowledgeSpaceService = {
     try {
       const response = await api.get<PaginationResponse<SpaceListItemDto>>(
         `/${alias}/`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getListUser: async (spacePublicId: string) => {
+    try {
+      const response = await api.get<PaginationResponse<UserDataSpaceDto>>(
+        `/${alias}/${spacePublicId}/members`,
       );
       return response.data;
     } catch (error) {

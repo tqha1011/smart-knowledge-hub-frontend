@@ -1,3 +1,4 @@
+import axios from "axios";
 import { handleApiError } from "../shared/handleApiError";
 import type { PaginationResponse } from "../types/commonType/pagination";
 import type {
@@ -8,6 +9,7 @@ import type {
   DocumentCreateRequest,
   DocumentPermissionRequest,
   DocumentPermissionRequestBody,
+  DocumentUpdateInput,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -71,8 +73,24 @@ export const documentService = {
     request: DocumentCreateRequest,
   ) => {
     try {
-      const response = await api.post<DocumentDetailsDto>(
+      const response = await api.post<DocumentListItemDto>(
         `${firstAlias}/${spacePublicId}/${afterAlias}`,
+        request,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateDocument: async (
+    spacePublicId: string,
+    documentPublicId: string,
+    request: DocumentUpdateInput,
+  ) => {
+    try {
+      const response = await api.patch<DocumentListItemDto>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}`,
         request,
       );
       return response.data;
@@ -93,6 +111,41 @@ export const documentService = {
         body,
       );
       return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateDocumentPermission: async (
+    spacePublicId: string,
+    documentPublicId: string,
+    request: DocumentPermissionRequest[],
+  ) => {
+    try {
+      const body: DocumentPermissionRequestBody = { permissions: request };
+      const response = await api.patch(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/permissions`,
+        body,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // Presigned storage URL (from getUploadUrl) — uploaded via a bare axios
+  // call, not the shared `api` instance, since it's not our backend: it
+  // must not carry the Authorization header or `api`'s default
+  // Content-Type: application/json.
+  uploadFileToStorage: async (
+    uploadUrl: string,
+    file: File | Blob,
+    contentType: string,
+  ) => {
+    try {
+      await axios.put(uploadUrl, file, {
+        headers: { "Content-Type": contentType },
+      });
     } catch (error) {
       throw handleApiError(error);
     }
