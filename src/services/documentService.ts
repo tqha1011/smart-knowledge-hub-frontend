@@ -97,4 +97,21 @@ export const documentService = {
       throw handleApiError(error);
     }
   },
+
+  updateDocumentPermission: async (
+    spacePublicId: string,
+    documentPublicId: string,
+    request: DocumentPermissionRequest[],
+  ) => {
+    try {
+      const body: DocumentPermissionRequestBody = { permissions: request };
+      const response = await api.patch(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/permissions`,
+        body,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
