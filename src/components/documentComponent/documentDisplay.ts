@@ -42,9 +42,9 @@ export function splitDocumentName(name: string): {
   };
 }
 
-export function formatRelativeDate(iso: string): string {
+export function formatRelativeDate(input: string | Date): string {
   const diffDays = Math.floor(
-    (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24),
+    (Date.now() - new Date(input).getTime()) / (1000 * 60 * 60 * 24),
   );
   if (diffDays <= 0) return "Today";
   if (diffDays === 1) return "Yesterday";
@@ -73,15 +73,15 @@ export const STATUS_BADGE: Record<
   DocumentStatus,
   { label: string; className: string }
 > = {
-  processing: {
+  Processing: {
     label: "Processing",
     className: "bg-status-processing-bg text-status-processing-fg",
   },
-  ready: {
+  Ready: {
     label: "Ready",
     className: "bg-status-ready-bg text-status-ready-fg",
   },
-  failed: {
+  Failed: {
     label: "Failed",
     className: "bg-status-failed-bg text-status-failed-fg",
   },
@@ -94,6 +94,7 @@ const FILE_EXTENSION_TYPE: Record<string, DocumentFileType> = {
   pdf: "PDF",
   docx: "DOCX",
   txt: "TXT",
+  md: "MD",
   markdown: "MD",
 };
 
@@ -107,11 +108,11 @@ export function fileTypeFromFileName(
   return FILE_EXTENSION_TYPE[extension] ?? null;
 }
 
-// Loose but real email-shape check for the restricted-visibility email
-// list — not a full RFC 5322 validator, just enough to catch obvious typos
-// (missing "@", no domain) before a value becomes a chip.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function isValidEmail(email: string): boolean {
-  return EMAIL_PATTERN.test(email);
+// Falls back to initials from a real name when a user has no avatarUrl —
+// first + last initial, or the first two letters for a single-word name.
+export function initialsFromName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

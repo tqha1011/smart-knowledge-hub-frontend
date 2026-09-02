@@ -5,6 +5,7 @@ export type {
   SpaceMembership,
   CreateSpaceDto,
   CreateSpaceTypeDto,
+  UserDataSpaceDto,
 } from "./commonType/space";
 export type {
   CurrentUser,
@@ -18,11 +19,15 @@ export type {
   DocumentFileType,
   DocumentStatus,
   DocumentVisibility,
+  DocumentPermission,
   DocumentSummary,
   KnowledgeGapItem,
   DocumentCitation,
   NewDocumentInput,
   DocumentUpdateInput,
+  DocumentListItemDto,
+  DocumentDetailsDto,
+  DocumentPermissionRequest,
 } from "./commonType/document";
 export type { CategoryDto, CreateCategoryRequest } from "./commonType/category";
 export type {

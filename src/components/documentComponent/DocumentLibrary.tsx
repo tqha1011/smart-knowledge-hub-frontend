@@ -1,5 +1,5 @@
 // src/components/documentComponent/DocumentLibrary.tsx
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import { CategoryFilterChips } from "./CategoryFilterChips";
@@ -7,14 +7,17 @@ import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
-import { mockDocumentCitations } from "../shell/shellMockData";
+import { documentService } from "../../services/documentService";
+import { categoryService } from "../../services/categoryService";
+import { toErrorMessage } from "../../shared/handleApiError";
 import type {
-  DocumentSummary,
-  DocumentUpdateInput,
+  CategoryDto,
+  DocumentDetailsDto,
+  DocumentListItemDto,
   KnowledgeGapItem,
-  NewDocumentInput,
   Space,
 } from "../../types";
+import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 export type DocumentLibraryTab = "all" | "needs-attention";
 
@@ -24,10 +27,6 @@ interface DocumentLibraryProps {
   canManage: boolean;
   activeTab: DocumentLibraryTab;
   onTabChange: (tab: DocumentLibraryTab) => void;
-  documents: DocumentSummary[];
-  onDeleteDocument: (documentId: string) => void;
-  onCreateDocument: (input: NewDocumentInput) => void;
-  onUpdateDocument: (documentId: string, updates: DocumentUpdateInput) => void;
   knowledgeGaps: KnowledgeGapItem[];
   onResolveGap: (id: string) => void;
   onIgnoreGap: (id: string) => void;
@@ -45,39 +44,80 @@ export function DocumentLibrary({
   canManage,
   activeTab,
   onTabChange,
-  documents,
-  onDeleteDocument,
-  onCreateDocument,
-  onUpdateDocument,
   knowledgeGaps,
   onResolveGap,
   onIgnoreGap,
 }: DocumentLibraryProps) {
+  const spacePublicId = space.id;
+
+  const [documents, setDocuments] = useState<DocumentListItemDto[]>([]);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const [selectedDocument, setSelectedDocument] =
-    useState<DocumentSummary | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+    null,
+  );
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 
   const [isFormPanelOpen, setIsFormPanelOpen] = useState(false);
   const [formPanelDocument, setFormPanelDocument] =
-    useState<DocumentSummary | null>(null);
+    useState<DocumentDetailsDto | null>(null);
 
-  const categories = Array.from(
-    new Set(documents.map((doc) => doc.category)),
+  // Reusable for the post-save refetch (called from an event handler, not
+  // an effect) — the mount fetch below is written inline instead of
+  // calling these, since calling a setState-bearing function from inside
+  // an effect body trips react-hooks/set-state-in-effect.
+  const loadDocuments = useCallback(async () => {
+    try {
+      const response =
+        await documentService.getListDocumentsForUser(spacePublicId);
+      setDocuments(response.items);
+    } catch (error) {
+      toast.error(toErrorMessage(error as ApiErrorResponse));
+    }
+  }, [spacePublicId]);
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const response = await categoryService.getListCategory(spacePublicId);
+      setCategories(response);
+    } catch (error) {
+      toast.error(toErrorMessage(error as ApiErrorResponse));
+    }
+  }, [spacePublicId]);
+
+  useEffect(() => {
+    let isActive = true;
+    documentService
+      .getListDocumentsForUser(spacePublicId)
+      .then((response) => {
+        if (isActive) setDocuments(response.items);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    categoryService
+      .getListCategory(spacePublicId)
+      .then((response) => {
+        if (isActive) setCategories(response);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [spacePublicId]);
+
+  const categoryNames = Array.from(
+    new Set(categories.map((category) => category.name)),
   ).sort();
   const filteredDocuments = activeCategory
-    ? documents.filter((doc) => doc.category === activeCategory)
+    ? documents.filter((doc) => doc.category.name === activeCategory)
     : documents;
 
-  const citationsForSelected = selectedDocument
-    ? mockDocumentCitations.filter(
-        (citation) => citation.documentId === selectedDocument.id,
-      )
-    : [];
-
-  const handleOpenDocument = (doc: DocumentSummary) => {
-    setSelectedDocument(doc);
+  const handleOpenDocument = (doc: DocumentListItemDto) => {
+    setSelectedDocumentId(doc.publicId);
     setIsDetailPanelOpen(true);
   };
 
@@ -85,18 +125,14 @@ export function DocumentLibrary({
     setIsDetailPanelOpen(false);
   };
 
-  const handleOpenFile = () => {
-    toast.info("Opening the file isn't wired to a backend yet.");
-  };
-
   const handleOpenUploadPanel = () => {
     setFormPanelDocument(null);
     setIsFormPanelOpen(true);
   };
 
-  const handleEditDetails = () => {
+  const handleEditDetails = (detail: DocumentDetailsDto) => {
     setIsDetailPanelOpen(false);
-    setFormPanelDocument(selectedDocument);
+    setFormPanelDocument(detail);
     setIsFormPanelOpen(true);
   };
 
@@ -104,29 +140,13 @@ export function DocumentLibrary({
     setIsFormPanelOpen(false);
   };
 
-  const handleReplaceFile = () => {
-    toast.info("Replace file isn't built yet.");
-  };
-
-  const handleDeleteDocument = (documentId: string) => {
-    onDeleteDocument(documentId);
-    setIsDetailPanelOpen(false);
-  };
-
   // Clear the active category filter on a successful create/update so the
   // mutated document is guaranteed visible — otherwise a stale filter can
   // hide a just-created doc, or leave an edited doc's old category with no
   // matching documents (a misleading "empty" table).
-  const handleFormCreate = (input: NewDocumentInput) => {
-    onCreateDocument(input);
-    setActiveCategory(null);
-  };
-
-  const handleFormUpdate = (
-    documentId: string,
-    updates: DocumentUpdateInput,
-  ) => {
-    onUpdateDocument(documentId, updates);
+  const handleFormSaved = () => {
+    loadDocuments();
+    loadCategories();
     setActiveCategory(null);
   };
 
@@ -182,10 +202,10 @@ export function DocumentLibrary({
         ))}
       </div>
 
-      {activeTab === "all" && categories.length > 0 && (
+      {activeTab === "all" && categoryNames.length > 0 && (
         <div className="mb-4">
           <CategoryFilterChips
-            categories={categories}
+            categories={categoryNames}
             activeCategory={activeCategory}
             onSelect={setActiveCategory}
           />
@@ -208,25 +228,21 @@ export function DocumentLibrary({
       )}
 
       <DocumentDetailPanel
-        document={selectedDocument}
+        documentPublicId={selectedDocumentId}
         isOpen={isDetailPanelOpen}
         space={space}
         canManage={canManage}
-        citations={citationsForSelected}
         onClose={handleCloseDetail}
-        onOpenFile={handleOpenFile}
         onEditDetails={handleEditDetails}
-        onReplaceFile={handleReplaceFile}
-        onDelete={handleDeleteDocument}
       />
 
       <DocumentFormPanel
         isOpen={isFormPanelOpen}
         document={formPanelDocument}
+        spacePublicId={spacePublicId}
         categories={categories}
         onClose={handleCloseFormPanel}
-        onCreate={handleFormCreate}
-        onUpdate={handleFormUpdate}
+        onSaved={handleFormSaved}
       />
     </div>
   );

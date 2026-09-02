@@ -1,6 +1,13 @@
 import axios from "axios";
 import type { ApiErrorResponse } from "../types/commonType/apiResponse";
 
+// ApiErrorResponse.message can be a single string or a list of validation
+// messages (e.g. class-validator style) — flatten either into one string
+// for a toast.
+export function toErrorMessage(error: ApiErrorResponse): string {
+  return Array.isArray(error.message) ? error.message.join(" ") : error.message;
+}
+
 export function handleApiError(error: unknown): ApiErrorResponse {
   if (axios.isAxiosError(error)) {
     // axios will return two types of errors:

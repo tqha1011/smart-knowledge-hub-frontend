@@ -10,7 +10,6 @@ import { AskAiPanel } from "../askAiComponent/AskAiPanel";
 import type { ShellNavKey } from "./navItems";
 import {
   mockCurrentUser,
-  mockDocuments,
   mockKnowledgeGaps,
   mockOrgUsers,
   mockSpaces,
@@ -21,11 +20,8 @@ import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
 import type {
-  DocumentSummary,
-  DocumentUpdateInput,
   InviteCandidate,
   KnowledgeGapItem,
-  NewDocumentInput,
   OrgUser,
   Space,
   UserAccessUpdate,
@@ -65,23 +61,14 @@ export function PortalShell() {
   );
   const needsAttentionCount = knowledgeGaps.length;
 
-  // Same lifted-state pattern as knowledgeGaps above: DocumentLibrary is
-  // conditionally rendered (unmounts when the user navigates to a sibling
-  // nav item like Users & Roles), so the document list must live here, not
-  // as DocumentLibrary's own local state, or a Delete gets silently undone
-  // on an unmount/remount round-trip.
-  const [documents, setDocuments] = useState<DocumentSummary[]>(() =>
-    mockDocuments.filter((doc) => doc.spaceId === membership?.space.id),
-  );
-
-  // Same lifted-state pattern as documents/knowledgeGaps above: users is
+  // Same lifted-state pattern as knowledgeGaps above: users is
   // org-wide (not filtered by Space), but UsersRolesPage is still
   // conditionally rendered (unmounts on nav switch), so it must live here
-  // to survive that round-trip. Unlike those two, this state must ALSO
+  // to survive that round-trip. Unlike knowledgeGaps, this state must ALSO
   // survive a Space switch — that remounts PortalShell itself and rebuilds
   // this seed — so the handlers below write back through setMockOrgUsers()
-  // instead of only calling setUsers(). documents/knowledgeGaps are
-  // legitimately Space-scoped and should reseed per Space; users isn't.
+  // instead of only calling setUsers(). knowledgeGaps is legitimately
+  // Space-scoped and should reseed per Space; users isn't.
   const [users, setUsers] = useState<OrgUser[]>(() => mockOrgUsers);
 
   if (!membership) {
@@ -124,60 +111,6 @@ export function PortalShell() {
         ...prev,
       ];
     });
-  };
-
-  const handleDeleteDocument = (documentId: string) => {
-    setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
-    toast.success("Document deleted.");
-  };
-
-  const handleCreateDocument = (input: NewDocumentInput) => {
-    const newDocument: DocumentSummary = {
-      id: `doc-${Date.now()}`,
-      spaceId: selectedSpace.id,
-      name: input.name,
-      fileType: input.fileType,
-      category: input.category,
-      description: input.description,
-      status: "processing",
-      updatedBy: {
-        name: currentUser.name,
-        avatarInitials: currentUser.avatarInitials,
-      },
-      updatedAt: new Date().toISOString(),
-      fileSizeBytes: input.fileSizeBytes,
-      citationCount: 0,
-      visibility: input.visibility,
-      restrictedEmails: input.restrictedEmails,
-    };
-    setDocuments((prev) => [newDocument, ...prev]);
-    toast.success("Document uploaded.");
-  };
-
-  const handleUpdateDocument = (
-    documentId: string,
-    updates: DocumentUpdateInput,
-  ) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === documentId
-          ? {
-              ...doc,
-              name: updates.name,
-              category: updates.category,
-              description: updates.description,
-              visibility: updates.visibility,
-              restrictedEmails: updates.restrictedEmails,
-              updatedBy: {
-                name: currentUser.name,
-                avatarInitials: currentUser.avatarInitials,
-              },
-              updatedAt: new Date().toISOString(),
-            }
-          : doc,
-      ),
-    );
-    toast.success("Document details updated.");
   };
 
   const handleUpdateUserAccess = (userId: string, update: UserAccessUpdate) => {
@@ -284,10 +217,6 @@ export function PortalShell() {
                       : "all"
                   }
                   onTabChange={handleLibraryTabChange}
-                  documents={documents}
-                  onDeleteDocument={handleDeleteDocument}
-                  onCreateDocument={handleCreateDocument}
-                  onUpdateDocument={handleUpdateDocument}
                   knowledgeGaps={knowledgeGaps}
                   onResolveGap={handleResolveGap}
                   onIgnoreGap={handleIgnoreGap}
