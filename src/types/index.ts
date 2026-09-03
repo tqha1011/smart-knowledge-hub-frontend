@@ -41,6 +41,16 @@ export type {
   ChatMessage,
 } from "./commonType/askAi";
 export type {
+  ChatMessageRole,
+  CreatedChatSessionData,
+  ChatSessionListData,
+  ChatMessageListData,
+  ChatSessionDetail,
+  ChatSource,
+  ChatMessageRequestDto,
+  ChatMessageResponseDto,
+} from "./commonType/chat";
+export type {
   LoginDto,
   SetPasswordDto,
   InviteContextDto,
