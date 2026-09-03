@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { IconRail } from "./IconRail";
@@ -8,22 +8,19 @@ import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
 import { AskAiPanel } from "../askAiComponent/AskAiPanel";
 import type { ShellNavKey } from "./navItems";
-import {
-  mockCurrentUser,
-  mockKnowledgeGaps,
-  spaceColorPalette,
-} from "./shellMockData";
+import { mockCurrentUser, spaceColorPalette } from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
 import { knowledgeSpaceService } from "../../services/spaceService";
+import { unansweredQuestionService } from "../../services/unansweredQuestion";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type {
-  KnowledgeGapItem,
   Space,
   SpaceListItemDto,
   SpaceMembership,
+  UnansweredQuestionData,
 } from "../../types";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
@@ -63,13 +60,45 @@ export function PortalShell() {
 
   // Lifted here (not into DocumentLibrary) because the gap count also
   // feeds the sidebar/rail/mobile-drawer badges, which are siblings of
-  // DocumentLibrary, not descendants. Keyed directly off the route param
-  // (not the fetched Space entry) so this hook doesn't have to wait on
-  // `spaces` to resolve — declared above any conditional return, since
-  // hooks can't be called conditionally.
-  const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapItem[]>(() =>
-    mockKnowledgeGaps.filter((gap) => gap.spaceId === spaceId),
+  // DocumentLibrary, not descendants. Fetched off the route param directly
+  // (not the resolved Space entry) so this doesn't have to wait on `spaces`
+  // — declared above any conditional return, since hooks can't be called
+  // conditionally.
+  const [knowledgeGaps, setKnowledgeGaps] = useState<UnansweredQuestionData[]>(
+    [],
   );
+
+  // Reusable for the post-resolve refetch (called from an event handler,
+  // not an effect) — the mount fetch below is written inline instead of
+  // calling this, since calling a setState-bearing function from inside an
+  // effect body trips react-hooks/set-state-in-effect.
+  const loadKnowledgeGaps = useCallback(async () => {
+    if (!spaceId) return;
+    try {
+      const response =
+        await unansweredQuestionService.getUnansweredQuestions(spaceId);
+      setKnowledgeGaps(response.items);
+    } catch (error) {
+      toast.error(toErrorMessage(error as ApiErrorResponse));
+    }
+  }, [spaceId]);
+
+  useEffect(() => {
+    if (!spaceId) return;
+    let isActive = true;
+    unansweredQuestionService
+      .getUnansweredQuestions(spaceId)
+      .then((response) => {
+        if (isActive) setKnowledgeGaps(response.items);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [spaceId]);
+
   const needsAttentionCount = knowledgeGaps.length;
 
   if (spaces === null) {
@@ -101,38 +130,12 @@ export function PortalShell() {
 
   const canManage = currentUser.isAdmin || currentEntry.role === "Editor";
 
-  const handleResolveGap = (id: string) => {
-    setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
-    toast.success("Marked resolved.");
-  };
-
-  const handleIgnoreGap = (id: string) => {
-    setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
-    toast.info("Question ignored.");
-  };
-
-  const handleLogKnowledgeGap = (question: string) => {
-    setKnowledgeGaps((prev) => {
-      const existing = prev.find(
-        (gap) => gap.question.toLowerCase() === question.toLowerCase(),
-      );
-      if (existing) {
-        return prev.map((gap) =>
-          gap.id === existing.id
-            ? { ...gap, askedCount: gap.askedCount + 1 }
-            : gap,
-        );
-      }
-      return [
-        {
-          id: `gap-${Date.now()}`,
-          spaceId: selectedSpace.id,
-          question,
-          askedCount: 1,
-        },
-        ...prev,
-      ];
-    });
+  // Ask AI isn't wired to a real backend yet (still a mock chat flow), so
+  // there's no server-side event to react to here — just resync with the
+  // real queue rather than fabricating a local entry with a fake publicId,
+  // which "Resolve" couldn't actually act on.
+  const handleLogKnowledgeGap = () => {
+    loadKnowledgeGaps();
   };
 
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
@@ -189,8 +192,7 @@ export function PortalShell() {
                   }
                   onTabChange={handleLibraryTabChange}
                   knowledgeGaps={knowledgeGaps}
-                  onResolveGap={handleResolveGap}
-                  onIgnoreGap={handleIgnoreGap}
+                  onGapsChanged={loadKnowledgeGaps}
                 />
               )}
               {activeNavKey === "users-roles" && (

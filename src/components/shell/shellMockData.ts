@@ -2,7 +2,6 @@ import type {
   CurrentUser,
   DocumentCitation,
   DocumentSummary,
-  KnowledgeGapItem,
   Space,
   SpaceType,
 } from "../../types";
@@ -285,32 +284,3 @@ export const mockSpaceStats: Record<
     needsAttentionCount: 1,
   },
 };
-
-// MOCK: stand-in for `GET /spaces/:spaceId/knowledge-gaps`. Counts per
-// spaceId intentionally match mockSpaceStats[spaceId].needsAttentionCount.
-export const mockKnowledgeGaps: KnowledgeGapItem[] = [
-  {
-    id: "gap-1",
-    spaceId: "engineering",
-    question: "What's our rollback procedure for a failed production deploy?",
-    askedCount: 5,
-  },
-  {
-    id: "gap-2",
-    spaceId: "engineering",
-    question: "Who owns the on-call rotation for the payments service?",
-    askedCount: 2,
-  },
-  {
-    id: "gap-3",
-    spaceId: "engineering",
-    question: "What's the retention policy for staging database snapshots?",
-    askedCount: 1,
-  },
-  {
-    id: "gap-4",
-    spaceId: "sales",
-    question: "What discount approval is needed for multi-year contracts?",
-    askedCount: 1,
-  },
-];
