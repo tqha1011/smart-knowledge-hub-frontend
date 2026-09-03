@@ -1,24 +1,24 @@
-// A cited source shown inline (as a numbered chip) and repeated in the
-// sources list below an assistant answer. No Space field — answers only
-// ever cite documents in the currently selected Space (already named in
-// the panel header), so there's nothing to disambiguate per citation.
+// A cited source, listed under an assistant answer (numbered chip +
+// title + excerpt). The backend doesn't mark where in the answer text a
+// source applies, so citations render as a trailing list, not inline
+// markers. No Space field — answers only ever cite documents in the
+// currently selected Space (already named in the panel header), so
+// there's nothing to disambiguate per citation.
 export interface AskAiCitation {
   chipNumber: number;
   documentId: string;
   documentTitle: string;
+  excerpt: string;
 }
 
 export type FeedbackVote = "helpful" | "not-helpful" | null;
 
-// isLowConfidence=true means no confident source was found: `text` carries
-// the "couldn't find a confident answer" copy, `citations` is empty, and
-// the caller is responsible for logging a knowledge gap — a separate
-// mechanism from thumbs-down feedback, per spec, not a merged one.
+// Empty `citations` means no source was found for the question (the
+// backend returns an empty `sources` list — including for small talk,
+// where "no source" isn't really a knowledge gap).
 export interface AssistantAnswer {
-  /** May contain inline citation markers like "{{1}}", replaced with citation chips at render time. */
   text: string;
   citations: AskAiCitation[];
-  isLowConfidence: boolean;
 }
 
 export interface UserChatMessage {

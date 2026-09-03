@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { AskAiCitation, AssistantChatMessage } from "../../types";
 import { CitationChip } from "./CitationChip";
 import { FeedbackRow } from "./FeedbackRow";
@@ -12,23 +11,11 @@ interface AssistantMessageBubbleProps {
   ) => void;
 }
 
-// Splits an answer's text on "{{N}}" citation markers and replaces each
-// one with a numbered CitationChip, rendering plain text in between.
-function renderAnswerText(text: string): ReactNode[] {
-  const parts = text.split(/(\{\{\d+\}\})/g);
-  return parts.map((part, index) => {
-    const match = part.match(/^\{\{(\d+)\}\}$/);
-    if (!match) return <span key={index}>{part}</span>;
-    return <CitationChip key={index} number={Number(match[1])} />;
-  });
-}
-
-// Left-aligned, neutral bubble for assistant answers, per spec: inline
-// numbered citation chips at the exact claim they support, a sources list
-// underneath repeating each chip number + document title, and a feedback
-// row. No per-citation Space badge — answers only ever cite documents in
-// the current Space, already named in the panel header. A low-confidence
-// answer has no citations to list.
+// Left-aligned, neutral bubble for assistant answers. The backend doesn't
+// mark where in the answer text a source applies (no inline citation
+// markers in `content`), so citations render as a trailing numbered list —
+// chip + document title + excerpt — rather than inline chips at the exact
+// claim they support. A low-confidence answer has no citations to list.
 export function AssistantMessageBubble({
   message,
   onFeedback,
@@ -38,18 +25,22 @@ export function AssistantMessageBubble({
   return (
     <div className="mr-auto w-fit max-w-[85%]">
       <div className="bg-surface-sunken text-ink rounded-lg rounded-tl-sm px-3 py-2 text-sm">
-        <p>{renderAnswerText(answer.text)}</p>
+        <p className="whitespace-pre-wrap">{answer.text}</p>
         {answer.citations.length > 0 && (
-          <ul className="border-border mt-2 flex flex-col gap-1 border-t pt-2">
+          <ul className="border-border mt-2 flex flex-col gap-1.5 border-t pt-2">
             {answer.citations.map((citation: AskAiCitation) => (
-              <li
-                key={citation.chipNumber}
-                className="flex items-center gap-1.5 text-xs"
-              >
-                <CitationChip number={citation.chipNumber} />
-                <span className="text-ink font-medium">
-                  {citation.documentTitle}
-                </span>
+              <li key={citation.chipNumber} className="text-xs">
+                <div className="flex items-center gap-1.5">
+                  <CitationChip number={citation.chipNumber} />
+                  <span className="text-ink font-medium">
+                    {citation.documentTitle}
+                  </span>
+                </div>
+                {citation.excerpt && (
+                  <p className="text-ink-muted mt-0.5 pl-5 italic">
+                    “{citation.excerpt}”
+                  </p>
+                )}
               </li>
             ))}
           </ul>

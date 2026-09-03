@@ -1,14 +1,20 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Send, Sparkles, X } from "lucide-react";
-import type { ChatMessage } from "../../types";
+import { History, Plus, Send, Sparkles, X } from "lucide-react";
+import type { ChatMessage, ChatSessionListData } from "../../types";
 import { UserMessageBubble } from "./UserMessageBubble";
 import { AssistantMessageBubble } from "./AssistantMessageBubble";
+import { ChatSessionList } from "./ChatSessionList";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface AskAiPanelBodyProps {
+  viewMode: "conversation" | "list";
   messages: ChatMessage[];
   inputValue: string;
+  isSending: boolean;
+  isLoadingSession: boolean;
+  sessions: ChatSessionListData[];
+  isLoadingSessions: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onFeedback: (
@@ -17,22 +23,38 @@ interface AskAiPanelBodyProps {
     comment?: string,
   ) => void;
   onClose: () => void;
+  onOpenHistory: () => void;
+  onNewChat: () => void;
+  onSelectSession: (session: ChatSessionListData) => void;
+  onDeleteSession: (session: ChatSessionListData) => void;
   spaceName: string;
   prefersReducedMotion: boolean | null;
 }
 
 // Floating slide-over panel's visual chrome (440px, right-aligned), same
 // pattern as DocumentDetailPanel/DocumentFormPanel. Unlike those two
-// document panels, this component owns no conversation state
-// itself — AskAiPanel (Task 6) keeps `messages` alive across close/reopen
-// by never unmounting it; only this chrome mounts/unmounts per open.
+// document panels, this component owns no conversation or session
+// state itself — AskAiPanel keeps it alive across close/reopen by never
+// unmounting it; only this chrome mounts/unmounts per open. Toggles
+// between a session-history list and the active conversation, both
+// inside the same 440px chrome rather than widening the panel for a
+// persistent sidebar.
 export function AskAiPanelBody({
+  viewMode,
   messages,
   inputValue,
+  isSending,
+  isLoadingSession,
+  sessions,
+  isLoadingSessions,
   onInputChange,
   onSend,
   onFeedback,
   onClose,
+  onOpenHistory,
+  onNewChat,
+  onSelectSession,
+  onDeleteSession,
   spaceName,
   prefersReducedMotion,
 }: AskAiPanelBodyProps) {
@@ -79,60 +101,96 @@ export function AskAiPanelBody({
             </h2>
             <p className="text-ink-muted text-sm">Searching {spaceName}</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close Ask AI panel"
-            className="text-ink-muted hover:bg-surface-sunken flex size-9 shrink-0 items-center justify-center rounded-md"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpenHistory}
+              aria-label="View chat history"
+              className="text-ink-muted hover:bg-surface-sunken flex size-9 items-center justify-center rounded-md"
+            >
+              <History size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={onNewChat}
+              aria-label="New chat"
+              className="text-ink-muted hover:bg-surface-sunken flex size-9 items-center justify-center rounded-md"
+            >
+              <Plus size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close Ask AI panel"
+              className="text-ink-muted hover:bg-surface-sunken flex size-9 items-center justify-center rounded-md"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto py-2">
-          {messages.length === 0 ? (
-            <div className="text-ink-muted flex h-full items-center justify-center text-center text-sm">
-              Ask a question about a document in this space.
-            </div>
-          ) : (
-            messages.map((message) =>
-              message.role === "user" ? (
-                <UserMessageBubble key={message.id} message={message} />
+        {viewMode === "list" ? (
+          <div className="flex-1 overflow-y-auto py-2">
+            <ChatSessionList
+              sessions={sessions}
+              isLoading={isLoadingSessions}
+              onSelect={onSelectSession}
+              onDelete={onDeleteSession}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 space-y-3 overflow-y-auto py-2">
+              {isLoadingSession ? (
+                <div className="text-ink-muted flex h-full items-center justify-center text-center text-sm">
+                  Loading chat…
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-ink-muted flex h-full items-center justify-center text-center text-sm">
+                  Ask a question about a document in this space.
+                </div>
               ) : (
-                <AssistantMessageBubble
-                  key={message.id}
-                  message={message}
-                  onFeedback={onFeedback}
-                />
-              ),
-            )
-          )}
-          {messages.length > 0 && <div ref={threadEndRef} />}
-        </div>
+                messages.map((message) =>
+                  message.role === "user" ? (
+                    <UserMessageBubble key={message.id} message={message} />
+                  ) : (
+                    <AssistantMessageBubble
+                      key={message.id}
+                      message={message}
+                      onFeedback={onFeedback}
+                    />
+                  ),
+                )
+              )}
+              {messages.length > 0 && <div ref={threadEndRef} />}
+            </div>
 
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            onSend();
-          }}
-          className="mt-3 flex gap-2"
-        >
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(event) => onInputChange(event.target.value)}
-            placeholder="Ask a question…"
-            className="border-border text-ink placeholder:text-ink-muted focus:border-accent flex-1 rounded-md border px-3 py-2 text-sm outline-none"
-          />
-          <button
-            type="submit"
-            disabled={!inputValue.trim()}
-            aria-label="Send"
-            className="bg-accent flex size-10 shrink-0 items-center justify-center rounded-md text-white disabled:opacity-50"
-          >
-            <Send size={16} />
-          </button>
-        </form>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                onSend();
+              }}
+              className="mt-3 flex gap-2"
+            >
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(event) => onInputChange(event.target.value)}
+                placeholder="Ask a question…"
+                disabled={isSending}
+                className="border-border text-ink placeholder:text-ink-muted focus:border-accent flex-1 rounded-md border px-3 py-2 text-sm outline-none disabled:opacity-60"
+              />
+              <button
+                type="submit"
+                disabled={!inputValue.trim() || isSending}
+                aria-label="Send"
+                className="bg-accent flex size-10 shrink-0 items-center justify-center rounded-md text-white disabled:opacity-50"
+              >
+                <Send size={16} />
+              </button>
+            </form>
+          </>
+        )}
       </motion.div>
     </div>
   );
