@@ -1,35 +1,26 @@
 import { MoreHorizontal } from "lucide-react";
-import type { OrgUser, UserStatus } from "../../types";
+import type { UserDataSpaceDto } from "../../types";
+import { formatRelativeDate, initialsFromName } from "../../shared/textFormat";
 
 interface UsersTableProps {
-  users: OrgUser[];
-  onOpenUser: (user: OrgUser) => void;
+  members: UserDataSpaceDto[];
+  onOpenMember: (member: UserDataSpaceDto) => void;
+  /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
+  canManage: boolean;
 }
 
-// Reuses the same status-token pairs the Document Library's processing
-// badge does (Active = --status-ready-*, "done/good"; Invited =
-// --status-processing-*, "in progress, not final yet") — the same
-// semantic reuse the spec's Design Tokens section describes.
-const STATUS_BADGE: Record<UserStatus, { label: string; className: string }> = {
-  active: {
-    label: "Active",
-    className: "bg-status-ready-bg text-status-ready-fg",
-  },
-  invited: {
-    label: "Invited",
-    className: "bg-status-processing-bg text-status-processing-fg",
-  },
-};
-
-// Org-wide people list (not Space-scoped), per spec. Same list/table shape
-// as DocumentTable: a name/avatar button and a trailing ⋯ button both open
-// the same row's detail panel — there's only one row action in this pass,
-// so both controls are equivalent entry points to it.
-export function UsersTable({ users, onOpenUser }: UsersTableProps) {
-  if (users.length === 0) {
+// Space-scoped member list — same list/table shape as DocumentTable: a
+// name/avatar button and a trailing ⋯ button both open the same row's
+// detail panel.
+export function UsersTable({
+  members,
+  onOpenMember,
+  canManage,
+}: UsersTableProps) {
+  if (members.length === 0) {
     return (
       <div className="border-border text-ink-muted flex min-h-48 items-center justify-center rounded-lg border border-dashed text-center text-sm">
-        No one has been invited yet.
+        No members in this space yet.
       </div>
     );
   }
@@ -41,74 +32,57 @@ export function UsersTable({ users, onOpenUser }: UsersTableProps) {
           <tr>
             <th className="px-4 py-2.5 font-medium">Person</th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
-              Admin
+              Role
             </th>
             <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
-              Spaces
+              Joined
             </th>
-            <th className="px-4 py-2.5 font-medium">Status</th>
             <th className="px-2 py-2.5">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
         <tbody className="divide-border divide-y">
-          {users.map((user) => (
-            <tr key={user.id} className="hover:bg-surface-sunken">
+          {members.map((member) => (
+            <tr key={member.publicId} className="hover:bg-surface-sunken">
               <td className="px-4 py-3">
                 <button
                   type="button"
-                  onClick={() => onOpenUser(user)}
+                  onClick={() => onOpenMember(member)}
                   className="flex min-w-0 items-center gap-2 text-left"
                 >
                   <span className="bg-avatar-bg text-avatar-fg flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
-                    {user.avatarInitials}
+                    {initialsFromName(member.name)}
                   </span>
                   <span className="min-w-0">
                     <span className="text-ink block truncate font-medium">
-                      {user.name}
+                      {member.name}
                     </span>
                     <span className="text-ink-muted block truncate text-xs">
-                      {user.email}
+                      {member.email}
                     </span>
                   </span>
                 </button>
               </td>
               <td className="hidden px-4 py-3 sm:table-cell">
-                {user.isAdmin && (
-                  <span className="bg-accent-soft text-accent rounded-full px-2 py-0.5 text-xs font-medium">
-                    Admin
-                  </span>
-                )}
-              </td>
-              <td className="hidden px-4 py-3 lg:table-cell">
-                <div className="flex flex-wrap gap-1">
-                  {user.memberships.map((membership) => (
-                    <span
-                      key={membership.space.id}
-                      className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-xs font-medium"
-                    >
-                      {membership.space.name} · {membership.role}
-                    </span>
-                  ))}
-                </div>
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[user.status].className}`}
-                >
-                  {STATUS_BADGE[user.status].label}
+                <span className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-xs font-medium">
+                  {member.role}
                 </span>
               </td>
+              <td className="text-ink-muted hidden px-4 py-3 lg:table-cell">
+                {formatRelativeDate(member.joinedAt)}
+              </td>
               <td className="px-2 py-3">
-                <button
-                  type="button"
-                  onClick={() => onOpenUser(user)}
-                  aria-label={`Actions for ${user.name}`}
-                  className="text-ink-muted hover:bg-surface flex size-8 items-center justify-center rounded-md"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenMember(member)}
+                    aria-label={`Actions for ${member.name}`}
+                    className="text-ink-muted hover:bg-surface flex size-8 items-center justify-center rounded-md"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                )}
               </td>
             </tr>
           ))}

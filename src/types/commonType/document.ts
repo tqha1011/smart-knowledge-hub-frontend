@@ -31,15 +31,6 @@ export interface DocumentSummary {
   restrictedEmails: string[];
 }
 
-// A knowledge-gap queue item — logged automatically when the (not yet
-// built) RAG Assistant has no confident source for a question.
-export interface KnowledgeGapItem {
-  id: string;
-  spaceId: string;
-  question: string;
-  askedCount: number;
-}
-
 // One question the RAG Assistant has answered using a specific document.
 // The Document detail panel's "Cited by the Assistant" list is built from
 // these; a document's citationCount (shown in the Document Library table)

@@ -5,7 +5,7 @@ export type SpaceRole = "Owner" | "Editor" | "Viewer";
 // Classifies what kind of Space this is (e.g. Department, Project). Admins
 // can add new types inline from the Create Space panel.
 export interface SpaceType {
-  id: string;
+  publicId: string;
   name: string;
 }
 
@@ -13,7 +13,8 @@ export interface Space {
   id: string;
   name: string;
   description?: string;
-  type: SpaceType;
+  /** Not returned by the Space list/detail endpoints — only set from mock data today. */
+  type?: SpaceType;
   /** Identity dot color shown next to the Space name in the switcher and chips. */
   colorDot: string;
 }
@@ -46,4 +47,21 @@ export interface UserDataSpaceDto {
   name: string;
   role: SpaceRole;
   joinedAt: Date;
+}
+
+export interface SpaceMember {
+  publicId: string;
+  role: SpaceRole;
+}
+
+export interface AddMemberRequest {
+  members: SpaceMember[];
+}
+
+export interface KickMemberRequest {
+  userPublicIds: string[];
+}
+
+export interface UpdateRoleRequest {
+  role: SpaceRole;
 }

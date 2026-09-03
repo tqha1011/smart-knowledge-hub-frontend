@@ -2,17 +2,15 @@ import type {
   CurrentUser,
   DocumentCitation,
   DocumentSummary,
-  KnowledgeGapItem,
-  OrgUser,
   Space,
   SpaceType,
 } from "../../types";
 
 // MOCK: stand-in for `GET /space-types`.
 export const mockSpaceTypes: SpaceType[] = [
-  { id: "department", name: "Department" },
-  { id: "project", name: "Project" },
-  { id: "practice-area", name: "Practice area" },
+  { publicId: "department", name: "Department" },
+  { publicId: "project", name: "Project" },
+  { publicId: "practice-area", name: "Practice area" },
 ];
 
 // Cycled through for Spaces created without an explicit color — pulled from
@@ -55,97 +53,6 @@ export const mockCurrentUser: CurrentUser = {
     { space: mockSpaces[2], role: "Viewer" },
   ],
 };
-
-// MOCK: stand-in for `GET /admin/users` (Users & Roles admin list) — every
-// person across the org, not Space-scoped. The first entry mirrors
-// mockCurrentUser's own fields (not duplicated by hand) so the two can't
-// drift out of sync, matching the countCitations/countDocuments derivation
-// pattern used elsewhere in this file. Names/initials for u2–u5 reuse the
-// same people already appearing as document authors below (Priya Nair,
-// Sam Ortiz, Jordan Lee, Morgan Diaz), so the two mock datasets read as one
-// consistent org rather than disconnected examples.
-export let mockOrgUsers: OrgUser[] = [
-  {
-    id: mockCurrentUser.id,
-    name: mockCurrentUser.name,
-    email: mockCurrentUser.email,
-    avatarInitials: mockCurrentUser.avatarInitials,
-    isAdmin: mockCurrentUser.isAdmin,
-    status: "active",
-    memberships: mockCurrentUser.memberships,
-  },
-  {
-    id: "u2",
-    name: "Priya Nair",
-    email: "priya@company.com",
-    avatarInitials: "PN",
-    isAdmin: false,
-    status: "active",
-    memberships: [{ space: mockSpaces[0], role: "Editor" }],
-  },
-  {
-    id: "u3",
-    name: "Sam Ortiz",
-    email: "sam@company.com",
-    avatarInitials: "SO",
-    isAdmin: false,
-    status: "active",
-    memberships: [{ space: mockSpaces[0], role: "Editor" }],
-  },
-  {
-    id: "u4",
-    name: "Jordan Lee",
-    email: "jordan@company.com",
-    avatarInitials: "JL",
-    isAdmin: false,
-    status: "active",
-    memberships: [{ space: mockSpaces[1], role: "Editor" }],
-  },
-  {
-    id: "u5",
-    name: "Morgan Diaz",
-    email: "morgan@company.com",
-    avatarInitials: "MD",
-    isAdmin: false,
-    status: "active",
-    memberships: [{ space: mockSpaces[2], role: "Editor" }],
-  },
-  {
-    id: "u6",
-    name: "Casey Kim",
-    email: "casey@company.com",
-    avatarInitials: "CK",
-    isAdmin: false,
-    status: "active",
-    memberships: [{ space: mockSpaces[1], role: "Editor" }],
-  },
-  {
-    id: "u7",
-    name: "Taylor Brooks",
-    email: "taylor@company.com",
-    avatarInitials: "TB",
-    isAdmin: false,
-    status: "invited",
-    memberships: [{ space: mockSpaces[2], role: "Editor" }],
-  },
-];
-
-// MOCK: persists Users & Roles edits for the page session. `users` is
-// org-wide (unlike documents/knowledgeGaps, which are legitimately
-// Space-scoped and should reseed per Space), but switching Spaces
-// navigates to /spaces/:spaceId, which remounts PortalShell and rebuilds
-// its `useState(() => mockOrgUsers)` seed — so without writing back here,
-// every promote/remove/invite would be silently undone on a Space switch.
-// A module-level mutable binding survives remounts because it's the same
-// JS module instance for the whole page session (only a full reload
-// resets it), mirroring spaceService.createSpace()'s mutation of
-// mockCurrentUser.memberships. Reassignment has to live in this module:
-// ES module imports are read-only bindings, so PortalShell can't assign
-// to `mockOrgUsers` directly (TS2632) — it calls this setter, and the
-// live binding means its next mount reads the updated array.
-export function setMockOrgUsers(next: OrgUser[]) {
-  mockOrgUsers = next;
-}
 
 // MOCK: stand-in for `GET /documents/:documentId/citations`. Backs the
 // Document detail panel's "Cited by the Assistant" list. Each document's
@@ -377,32 +284,3 @@ export const mockSpaceStats: Record<
     needsAttentionCount: 1,
   },
 };
-
-// MOCK: stand-in for `GET /spaces/:spaceId/knowledge-gaps`. Counts per
-// spaceId intentionally match mockSpaceStats[spaceId].needsAttentionCount.
-export const mockKnowledgeGaps: KnowledgeGapItem[] = [
-  {
-    id: "gap-1",
-    spaceId: "engineering",
-    question: "What's our rollback procedure for a failed production deploy?",
-    askedCount: 5,
-  },
-  {
-    id: "gap-2",
-    spaceId: "engineering",
-    question: "Who owns the on-call rotation for the payments service?",
-    askedCount: 2,
-  },
-  {
-    id: "gap-3",
-    spaceId: "engineering",
-    question: "What's the retention policy for staging database snapshots?",
-    askedCount: 1,
-  },
-  {
-    id: "gap-4",
-    spaceId: "sales",
-    question: "What discount approval is needed for multi-year contracts?",
-    askedCount: 1,
-  },
-];

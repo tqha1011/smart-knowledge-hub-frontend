@@ -7,6 +7,7 @@ import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
+import { ResolveQuestionPanel } from "./ResolveQuestionPanel";
 import { documentService } from "../../services/documentService";
 import { categoryService } from "../../services/categoryService";
 import { toErrorMessage } from "../../shared/handleApiError";
@@ -14,8 +15,8 @@ import type {
   CategoryDto,
   DocumentDetailsDto,
   DocumentListItemDto,
-  KnowledgeGapItem,
   Space,
+  UnansweredQuestionData,
 } from "../../types";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
@@ -27,9 +28,9 @@ interface DocumentLibraryProps {
   canManage: boolean;
   activeTab: DocumentLibraryTab;
   onTabChange: (tab: DocumentLibraryTab) => void;
-  knowledgeGaps: KnowledgeGapItem[];
-  onResolveGap: (id: string) => void;
-  onIgnoreGap: (id: string) => void;
+  knowledgeGaps: UnansweredQuestionData[];
+  /** Called after a question is resolved so the parent can refetch the queue (it also owns the sidebar/rail badge counts). */
+  onGapsChanged: () => void;
 }
 
 // Page structure per spec: title + subtitle + Upload button, tabs, category
@@ -45,8 +46,7 @@ export function DocumentLibrary({
   activeTab,
   onTabChange,
   knowledgeGaps,
-  onResolveGap,
-  onIgnoreGap,
+  onGapsChanged,
 }: DocumentLibraryProps) {
   const spacePublicId = space.id;
 
@@ -62,6 +62,10 @@ export function DocumentLibrary({
   const [isFormPanelOpen, setIsFormPanelOpen] = useState(false);
   const [formPanelDocument, setFormPanelDocument] =
     useState<DocumentDetailsDto | null>(null);
+
+  const [isResolvePanelOpen, setIsResolvePanelOpen] = useState(false);
+  const [questionToResolve, setQuestionToResolve] =
+    useState<UnansweredQuestionData | null>(null);
 
   // Reusable for the post-save refetch (called from an event handler, not
   // an effect) — the mount fetch below is written inline instead of
@@ -150,6 +154,20 @@ export function DocumentLibrary({
     setActiveCategory(null);
   };
 
+  const handleOpenResolve = (item: UnansweredQuestionData) => {
+    setQuestionToResolve(item);
+    setIsResolvePanelOpen(true);
+  };
+
+  const handleCloseResolvePanel = () => {
+    setIsResolvePanelOpen(false);
+  };
+
+  const handleResolved = () => {
+    setIsResolvePanelOpen(false);
+    onGapsChanged();
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -222,8 +240,7 @@ export function DocumentLibrary({
         <NeedsAttentionList
           items={knowledgeGaps}
           canManage={canManage}
-          onResolve={onResolveGap}
-          onIgnore={onIgnoreGap}
+          onOpenResolve={handleOpenResolve}
         />
       )}
 
@@ -243,6 +260,14 @@ export function DocumentLibrary({
         categories={categories}
         onClose={handleCloseFormPanel}
         onSaved={handleFormSaved}
+      />
+
+      <ResolveQuestionPanel
+        isOpen={isResolvePanelOpen}
+        question={questionToResolve}
+        spacePublicId={spacePublicId}
+        onClose={handleCloseResolvePanel}
+        onResolved={handleResolved}
       />
     </div>
   );

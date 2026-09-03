@@ -1,6 +1,8 @@
 import { File, FileCode, FileText } from "lucide-react";
 import type { DocumentFileType, DocumentStatus } from "../../types";
 
+export { formatRelativeDate, initialsFromName } from "../../shared/textFormat";
+
 export const FILE_TYPE_ICON: Record<DocumentFileType, typeof FileText> = {
   PDF: FileText,
   DOCX: File,
@@ -40,19 +42,6 @@ export function splitDocumentName(name: string): {
     baseName: name.slice(0, lastDotIndex),
     extension: name.slice(lastDotIndex + 1).toUpperCase(),
   };
-}
-
-export function formatRelativeDate(input: string | Date): string {
-  const diffDays = Math.floor(
-    (Date.now() - new Date(input).getTime()) / (1000 * 60 * 60 * 24),
-  );
-  if (diffDays <= 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks > 1 ? "s" : ""} ago`;
-  const diffMonths = Math.floor(diffDays / 30);
-  return `${diffMonths} month${diffMonths > 1 ? "s" : ""} ago`;
 }
 
 // Formats a raw byte count as a human-readable KB/MB label for the
@@ -106,13 +95,4 @@ export function fileTypeFromFileName(
   const extension = fileName.split(".").pop()?.toLowerCase();
   if (!extension) return null;
   return FILE_EXTENSION_TYPE[extension] ?? null;
-}
-
-// Falls back to initials from a real name when a user has no avatarUrl —
-// first + last initial, or the first two letters for a single-word name.
-export function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
