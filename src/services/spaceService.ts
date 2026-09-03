@@ -1,10 +1,14 @@
 import { handleApiError } from "../shared/handleApiError";
 import type { PaginationResponse } from "../types/commonType/pagination";
 import type {
+  AddMemberRequest,
   CreateSpaceTypeDto,
+  KickMemberRequest,
   RequestSpaceDto,
   SpaceListItemDto,
   SpaceRole,
+  SpaceType,
+  UpdateRoleRequest,
   UserDataSpaceDto,
 } from "../types/commonType/space";
 import api from "./api";
@@ -85,7 +89,59 @@ export const knowledgeSpaceTypeService = {
 
   getListTypes: async () => {
     try {
-      const response = await api.get(`/${alias}/types`);
+      const response = await api.get<SpaceType[]>(`/${alias}/types`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+};
+
+export const knowledgeSpaceMemberService = {
+  addMembers: async (spacePublicId: string, request: AddMemberRequest) => {
+    try {
+      const response = await api.post(
+        `/${alias}/${spacePublicId}/members`,
+        request,
+      ); // return 201
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  leaveSpaces: async (spacePublicId: string) => {
+    try {
+      const response = await api.delete(
+        `/${alias}/${spacePublicId}/members/me`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  kickMembers: async (spacePublicId: string, request: KickMemberRequest) => {
+    try {
+      const response = await api.delete(`/${alias}/${spacePublicId}/members/`, {
+        data: request,
+      }); // return 200Ok with { success: true }
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateRole: async (
+    spacePublicId: string,
+    userPublicId: string,
+    request: UpdateRoleRequest,
+  ) => {
+    try {
+      const response = await api.put(
+        `/${alias}/${spacePublicId}/members/${userPublicId}`,
+        request,
+      );
       return response.data;
     } catch (error) {
       throw handleApiError(error);
