@@ -1,6 +1,9 @@
 import { handleApiError } from "../shared/handleApiError";
 import type { PaginationResponse } from "../types/commonType/pagination";
-import type { UnansweredQuestionData } from "../types/commonType/unansweredQuestion";
+import type {
+  ResolveUnansweredQuestionRequest,
+  UnansweredQuestionData,
+} from "../types/commonType/unansweredQuestion";
 import api from "./api";
 
 const firstAlias = "knowledge-spaces";
@@ -17,11 +20,16 @@ export const unansweredQuestionService = {
     }
   },
 
-  markResolve: async (spacePublicId: string, questionPublicId: string) => {
+  markResolve: async (
+    spacePublicId: string,
+    questionPublicId: string,
+    request: ResolveUnansweredQuestionRequest,
+  ) => {
     try {
       const response = await api.patch(
         `/${firstAlias}/${spacePublicId}/${secondAlias}/${questionPublicId}`,
-      );
+        request,
+      ); // return 200Ok { resolved: true }
       return response.data;
     } catch (error) {
       throw handleApiError(error);

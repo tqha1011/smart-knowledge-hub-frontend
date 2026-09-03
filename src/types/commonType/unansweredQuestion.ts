@@ -3,3 +3,7 @@ export interface UnansweredQuestionData {
   question: string;
   reason: string;
 }
+
+export interface ResolveUnansweredQuestionRequest {
+  answer: string;
+}
