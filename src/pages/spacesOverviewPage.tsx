@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LogOut, Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -7,9 +7,12 @@ import { PageTransition } from "../components/common/PageTransition";
 import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
 import {
   mockCurrentUser,
-  mockSpaceStats,
+  spaceColorPalette,
 } from "../components/shell/shellMockData";
-import type { SpaceMembership } from "../types";
+import { knowledgeSpaceService } from "../services/spaceService";
+import { toErrorMessage } from "../shared/handleApiError";
+import type { SpaceListItemDto } from "../types";
+import type { ApiErrorResponse } from "../types/commonType/apiResponse";
 
 // Landing page after login — every Space the current user belongs to, one
 // card each. Both Admin and Employee land here; only per-action gating
@@ -19,10 +22,32 @@ import type { SpaceMembership } from "../types";
 export function SpacesOverviewPage() {
   const navigate = useNavigate();
   const currentUser = mockCurrentUser; // MOCK: stand-in for GET /me, no auth session yet
-  const [memberships, setMemberships] = useState<SpaceMembership[]>(
-    currentUser.memberships,
-  );
+  const [spaces, setSpaces] = useState<SpaceListItemDto[]>([]);
   const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
+
+  const loadSpaces = useCallback(async () => {
+    try {
+      const response = await knowledgeSpaceService.getUserSpaces();
+      setSpaces(response.items);
+    } catch (error) {
+      toast.error(toErrorMessage(error as ApiErrorResponse));
+    }
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    knowledgeSpaceService
+      .getUserSpaces()
+      .then((response) => {
+        if (isActive) setSpaces(response.items);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -86,41 +111,36 @@ export function SpacesOverviewPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {memberships.map(({ space, role }) => {
-              const stats = mockSpaceStats[space.id];
+            {spaces.map((space, index) => {
               // Space-scoped action: global Admin OR Editor in *this* Space —
               // not gated on isAdmin alone, per the (Space, role) permission model.
-              const canManage = currentUser.isAdmin || role === "Editor";
+              const canManage = currentUser.isAdmin || space.role === "Editor";
+              const colorDot =
+                spaceColorPalette[index % spaceColorPalette.length];
 
               return (
-                <div key={space.id} className="group relative">
+                <div key={space.publicId} className="group relative">
                   <button
                     type="button"
-                    onClick={() => navigate(`/spaces/${space.id}`)}
+                    onClick={() => navigate(`/spaces/${space.publicId}`)}
                     className="border-border bg-surface hover:border-accent flex w-full flex-col items-start gap-3 rounded-lg border p-5 text-left shadow-sm"
                   >
                     <span
                       aria-hidden
                       className="size-3 rounded-full"
-                      style={{ backgroundColor: space.colorDot }}
+                      style={{ backgroundColor: colorDot }}
                     />
                     <div>
                       <h2 className="font-display text-ink text-lg font-semibold">
                         {space.name}
                       </h2>
-                      <span className="text-ink-muted text-xs">{role}</span>
+                      <span className="text-ink-muted text-xs">
+                        {space.role}
+                      </span>
                     </div>
-                    {/* MOCK: document/needs-attention counts from mockSpaceStats */}
-                    {stats && (
-                      <div className="text-ink-muted flex items-center gap-3 font-mono text-xs">
-                        <span>{stats.documentCount} documents</span>
-                        {stats.needsAttentionCount > 0 && (
-                          <span className="bg-warn-bg text-warn-fg rounded-full px-1.5 py-0.5">
-                            {stats.needsAttentionCount} needs attention
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="text-ink-muted flex items-center gap-3 font-mono text-xs">
+                      <span>{space.totalDocuments} documents</span>
+                    </div>
                   </button>
 
                   {canManage && (
@@ -145,9 +165,7 @@ export function SpacesOverviewPage() {
       <CreateSpacePanel
         isOpen={isCreateSpaceOpen}
         onClose={() => setIsCreateSpaceOpen(false)}
-        onCreated={(space) =>
-          setMemberships((prev) => [...prev, { space, role: "Editor" }])
-        }
+        onCreated={loadSpaces}
       />
     </PageTransition>
   );

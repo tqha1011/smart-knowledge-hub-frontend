@@ -3,17 +3,16 @@ export type {
   SpaceRole,
   SpaceType,
   SpaceMembership,
-  CreateSpaceDto,
+  RequestSpaceDto,
   CreateSpaceTypeDto,
+  SpaceListItemDto,
   UserDataSpaceDto,
+  SpaceMember,
+  AddMemberRequest,
+  KickMemberRequest,
+  UpdateRoleRequest,
 } from "./commonType/space";
-export type {
-  CurrentUser,
-  OrgUser,
-  UserStatus,
-  UserAccessUpdate,
-  InviteCandidate,
-} from "./commonType/user";
+export type { CurrentUser } from "./commonType/user";
 export type {
   DocumentAuthor,
   DocumentFileType,

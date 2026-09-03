@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { IconRail } from "./IconRail";
@@ -11,28 +11,29 @@ import type { ShellNavKey } from "./navItems";
 import {
   mockCurrentUser,
   mockKnowledgeGaps,
-  mockOrgUsers,
-  mockSpaces,
-  setMockOrgUsers,
+  spaceColorPalette,
 } from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
+import { knowledgeSpaceService } from "../../services/spaceService";
+import { toErrorMessage } from "../../shared/handleApiError";
 import type {
-  InviteCandidate,
   KnowledgeGapItem,
-  OrgUser,
   Space,
-  UserAccessUpdate,
+  SpaceListItemDto,
+  SpaceMembership,
 } from "../../types";
+import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
+
+function toSpace(item: SpaceListItemDto, colorDot: string): Space {
+  return { id: item.publicId, name: item.name, colorDot };
+}
 
 // Portal shell: icon rail + labeled sidebar + topbar on desktop, collapsing
 // to a hamburger drawer + bottom tab bar on mobile (see spec's responsive
 // breakpoints — 980px drops the sidebar, 640px drops the rail too).
-// Only the chrome is real here; the routed pages themselves (Document
-// Library, Needs attention queue, Users & Roles) are separate, later pieces —
-// the content pane below just proves each nav destination is reachable.
 export function PortalShell() {
   const { spaceId } = useParams<{ spaceId: string }>();
   const navigate = useNavigate();
@@ -40,44 +41,65 @@ export function PortalShell() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isAskAiOpen, setIsAskAiOpen] = useState(false);
 
-  const currentUser = mockCurrentUser; // MOCK: no auth session yet, stands in for the logged-in user
+  // null = still loading. Fetched once per mount — a Space switch changes
+  // the URL's pathname, which re-keys <Routes> in App.tsx and remounts this
+  // component fresh, so there's no separate spaceId-change effect to write.
+  const [spaces, setSpaces] = useState<SpaceListItemDto[] | null>(null);
 
-  // Space comes from the route (/spaces/:spaceId), not local state, so
-  // switching Spaces updates the URL and an unknown id bounces back to the overview grid.
-  const membership = currentUser.memberships.find(
-    (m) => m.space.id === spaceId,
-  );
+  useEffect(() => {
+    let isActive = true;
+    knowledgeSpaceService
+      .getUserSpaces()
+      .then((response) => {
+        if (isActive) setSpaces(response.items);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   // Lifted here (not into DocumentLibrary) because the gap count also
   // feeds the sidebar/rail/mobile-drawer badges, which are siblings of
-  // DocumentLibrary, not descendants. A fresh PortalShell mount (Space
-  // switches remount this component via the router key) reseeds from mock
-  // data, same pattern as mockCurrentUser elsewhere in this codebase.
-  // NOTE: initialized from `membership?.space.id` (not `selectedSpace.id`)
-  // and declared above the `if (!membership)` early return below — hooks
-  // can't be called conditionally, so this can't sit after that guard.
+  // DocumentLibrary, not descendants. Keyed directly off the route param
+  // (not the fetched Space entry) so this hook doesn't have to wait on
+  // `spaces` to resolve — declared above any conditional return, since
+  // hooks can't be called conditionally.
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapItem[]>(() =>
-    mockKnowledgeGaps.filter((gap) => gap.spaceId === membership?.space.id),
+    mockKnowledgeGaps.filter((gap) => gap.spaceId === spaceId),
   );
   const needsAttentionCount = knowledgeGaps.length;
 
-  // Same lifted-state pattern as knowledgeGaps above: users is
-  // org-wide (not filtered by Space), but UsersRolesPage is still
-  // conditionally rendered (unmounts on nav switch), so it must live here
-  // to survive that round-trip. Unlike knowledgeGaps, this state must ALSO
-  // survive a Space switch — that remounts PortalShell itself and rebuilds
-  // this seed — so the handlers below write back through setMockOrgUsers()
-  // instead of only calling setUsers(). knowledgeGaps is legitimately
-  // Space-scoped and should reseed per Space; users isn't.
-  const [users, setUsers] = useState<OrgUser[]>(() => mockOrgUsers);
+  if (spaces === null) {
+    return (
+      <div className="bg-bg text-ink-muted flex h-dvh items-center justify-center text-sm">
+        Loading…
+      </div>
+    );
+  }
 
-  if (!membership) {
+  const currentEntryIndex = spaces.findIndex((s) => s.publicId === spaceId);
+  if (currentEntryIndex === -1) {
     return <Navigate to="/spaces" replace />;
   }
-  const selectedSpace = membership.space;
+  const currentEntry = spaces[currentEntryIndex];
+  const selectedSpace = toSpace(
+    currentEntry,
+    spaceColorPalette[currentEntryIndex % spaceColorPalette.length],
+  );
 
-  const canManageDocuments =
-    currentUser.isAdmin || membership.role === "Editor";
+  // Space switcher needs every Space the user belongs to, each paired with
+  // its own role — mockCurrentUser only supplies identity fields (name,
+  // avatar, isAdmin) now; the memberships list itself is real.
+  const memberships: SpaceMembership[] = spaces.map((item, index) => ({
+    space: toSpace(item, spaceColorPalette[index % spaceColorPalette.length]),
+    role: item.role,
+  }));
+  const currentUser = { ...mockCurrentUser, memberships };
+
+  const canManage = currentUser.isAdmin || currentEntry.role === "Editor";
 
   const handleResolveGap = (id: string) => {
     setKnowledgeGaps((prev) => prev.filter((gap) => gap.id !== id));
@@ -111,57 +133,6 @@ export function PortalShell() {
         ...prev,
       ];
     });
-  };
-
-  const handleUpdateUserAccess = (userId: string, update: UserAccessUpdate) => {
-    setUsers((prev) => {
-      const next = prev.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              isAdmin: update.isAdmin,
-              memberships: update.memberships,
-            }
-          : user,
-      );
-      setMockOrgUsers(next);
-      return next;
-    });
-    toast.success("User access updated.");
-  };
-
-  const handleRemoveUser = (userId: string) => {
-    setUsers((prev) => {
-      const next = prev.filter((user) => user.id !== userId);
-      setMockOrgUsers(next);
-      return next;
-    });
-    toast.success("User removed.");
-  };
-
-  const handleInvitePeople = (candidates: InviteCandidate[]) => {
-    setUsers((prev) => {
-      const next = [
-        ...prev,
-        ...candidates.map((candidate, index) => {
-          const space = mockSpaces.find((s) => s.id === candidate.spaceId);
-          return {
-            id: `user-${Date.now()}-${index}`,
-            name: candidate.email.split("@")[0],
-            email: candidate.email,
-            avatarInitials: candidate.email.slice(0, 2).toUpperCase(),
-            isAdmin: false,
-            status: "invited" as const,
-            memberships: space ? [{ space, role: candidate.role }] : [],
-          };
-        }),
-      ];
-      setMockOrgUsers(next);
-      return next;
-    });
-    toast.success(
-      `Sent ${candidates.length} invite${candidates.length === 1 ? "" : "s"}.`,
-    );
   };
 
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
@@ -210,7 +181,7 @@ export function PortalShell() {
                 activeNavKey === "needs-attention") && (
                 <DocumentLibrary
                   space={selectedSpace}
-                  canManage={canManageDocuments}
+                  canManage={canManage}
                   activeTab={
                     activeNavKey === "needs-attention"
                       ? "needs-attention"
@@ -223,13 +194,7 @@ export function PortalShell() {
                 />
               )}
               {activeNavKey === "users-roles" && (
-                <UsersRolesPage
-                  users={users}
-                  allSpaces={mockSpaces}
-                  onUpdateUserAccess={handleUpdateUserAccess}
-                  onRemoveUser={handleRemoveUser}
-                  onInvitePeople={handleInvitePeople}
-                />
+                <UsersRolesPage space={selectedSpace} canManage={canManage} />
               )}
             </main>
           </div>

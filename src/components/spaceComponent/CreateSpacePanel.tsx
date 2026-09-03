@@ -3,15 +3,22 @@ import type { FormEvent } from "react";
 import { X, Plus } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
-import { createSpace, listSpaceTypes } from "../../services/spaceService";
+import {
+  knowledgeSpaceService,
+  knowledgeSpaceTypeService,
+} from "../../services/spaceService";
 import { CreateSpaceTypeModal } from "./CreateSpaceTypeModal";
 import { usePanelDismiss } from "../common/usePanelDismiss";
-import type { Space, SpaceType } from "../../types";
+import { toErrorMessage } from "../../shared/handleApiError";
+import type { SpaceType } from "../../types";
+import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 interface CreateSpacePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated: (space: Space) => void;
+  // createSpace returns no usable body — this just signals the parent to
+  // refetch its Space list, it doesn't hand back the created Space.
+  onCreated: () => void;
 }
 
 // Slide-over panel — same 420px right-aligned pattern the spec defines for
@@ -32,10 +39,21 @@ export function CreateSpacePanel({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadTypes = async () => {
+    setIsLoadingTypes(true);
+    try {
+      const data = await knowledgeSpaceTypeService.getListTypes();
+      setTypes(data);
+      return data;
+    } finally {
+      setIsLoadingTypes(false);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen || types.length > 0) return;
     let isActive = true;
-    listSpaceTypes().then((data) => {
+    knowledgeSpaceTypeService.getListTypes().then((data) => {
       if (!isActive) return;
       setTypes(data);
       setIsLoadingTypes(false);
@@ -59,9 +77,12 @@ export function CreateSpacePanel({
 
   const panelRef = usePanelDismiss(isOpen, handleClose, isTypeModalOpen);
 
-  const handleTypeCreated = (newType: SpaceType) => {
-    setTypes((prev) => [...prev, newType]);
-    setTypeId(newType.id);
+  // The create-type endpoint returns no body, so re-fetch the list and
+  // select the just-created type by the name we sent it.
+  const handleTypeCreated = async (typeName: string) => {
+    const data = await loadTypes();
+    const created = data?.find((type) => type.name === typeName);
+    if (created) setTypeId(created.publicId);
     setIsTypeModalOpen(false);
   };
 
@@ -80,13 +101,17 @@ export function CreateSpacePanel({
 
     setIsSubmitting(true);
     try {
-      const newSpace = await createSpace({ name, description, typeId });
-      toast.success(`${newSpace.name} space created.`);
-      onCreated(newSpace);
+      await knowledgeSpaceService.createSpace({
+        name: name.trim(),
+        description: description.trim() || null,
+        typePublicId: typeId,
+      });
+      toast.success(`${name.trim()} space created.`);
+      onCreated();
       resetForm();
       onClose();
-    } catch {
-      setError("Couldn't create this space. Try again.");
+    } catch (submitError) {
+      setError(toErrorMessage(submitError as ApiErrorResponse));
     } finally {
       setIsSubmitting(false);
     }
@@ -198,7 +223,7 @@ export function CreateSpacePanel({
                       {isLoadingTypes ? "Loading types..." : "Select a type"}
                     </option>
                     {types.map((type) => (
-                      <option key={type.id} value={type.id}>
+                      <option key={type.publicId} value={type.publicId}>
                         {type.name}
                       </option>
                     ))}

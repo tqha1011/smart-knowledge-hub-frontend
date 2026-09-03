@@ -27,6 +27,6 @@ export const ASSISTANT_NAV_ICON = Sparkles;
 // "Admin" eyebrow — Admin-only, hidden entirely for Employee/Editor.
 export const ADMIN_NAV_ITEM: ShellNavItem = {
   key: "users-roles",
-  label: "Users & Roles",
+  label: "Members",
   icon: Users,
 };

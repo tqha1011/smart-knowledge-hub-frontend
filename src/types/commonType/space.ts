@@ -13,7 +13,8 @@ export interface Space {
   id: string;
   name: string;
   description?: string;
-  type: SpaceType;
+  /** Not returned by the Space list/detail endpoints — only set from mock data today. */
+  type?: SpaceType;
   /** Identity dot color shown next to the Space name in the switcher and chips. */
   colorDot: string;
 }

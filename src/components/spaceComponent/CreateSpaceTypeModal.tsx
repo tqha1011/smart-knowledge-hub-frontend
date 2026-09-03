@@ -2,13 +2,16 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { createSpaceType } from "../../services/spaceService";
-import type { SpaceType } from "../../types";
+import { knowledgeSpaceTypeService } from "../../services/spaceService";
+import { toErrorMessage } from "../../shared/handleApiError";
+import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 interface CreateSpaceTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreated: (type: SpaceType) => void;
+  // The create endpoint returns no body (201 only) — hand back the typed
+  // name so the parent can refetch the type list and reselect it by name.
+  onCreated: (typeName: string) => void;
 }
 
 // Small centered dialog nested on top of CreateSpacePanel — deliberately not
@@ -41,11 +44,12 @@ export function CreateSpaceTypeModal({
 
     setIsSubmitting(true);
     try {
-      const newType = await createSpaceType({ name });
+      const trimmedName = name.trim();
+      await knowledgeSpaceTypeService.createType({ name: trimmedName });
       setName("");
-      onCreated(newType);
-    } catch {
-      setError("Couldn't create this type. Try again.");
+      onCreated(trimmedName);
+    } catch (submitError) {
+      setError(toErrorMessage(submitError as ApiErrorResponse));
     } finally {
       setIsSubmitting(false);
     }
