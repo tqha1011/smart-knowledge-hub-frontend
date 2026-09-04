@@ -9,3 +9,16 @@ export interface CurrentUser {
   isAdmin: boolean;
   memberships: SpaceMembership[];
 }
+
+/** Raw `GET /users/me` response shape. `role` is a legacy/global-looking
+ * field the endpoint still returns, but per the (Space, role) permission
+ * model `isAdmin` is the only field that should gate anything global. */
+export interface CurrentUserDto {
+  publicId: string;
+  email: string;
+  username: string;
+  avatarUrl: string;
+  role: string;
+  avatarInitials: string;
+  isAdmin: boolean;
+}

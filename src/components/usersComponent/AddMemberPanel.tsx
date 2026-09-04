@@ -18,8 +18,8 @@ interface AddMemberPanelProps {
 
 // Floating slide-over panel (420px, right-aligned), same pattern as
 // CreateSpacePanel/UserDetailPanel. Adds existing users to this Space by
-// their publicId — there's no org-wide user search yet, so this takes a
-// raw id rather than an email-based invite/lookup.
+// email — there's no org-wide user search yet, so this takes a raw email
+// rather than a picker/lookup.
 export function AddMemberPanel({
   isOpen,
   spacePublicId,
@@ -51,7 +51,7 @@ interface AddMemberPanelBodyProps {
 
 interface MemberDraft {
   key: string;
-  userPublicId: string;
+  email: string;
   role: SpaceRole;
 }
 
@@ -62,7 +62,7 @@ function nextCardKey(): string {
 }
 
 function makeBlankCard(): MemberDraft {
-  return { key: nextCardKey(), userPublicId: "", role: "Viewer" };
+  return { key: nextCardKey(), email: "", role: "Viewer" };
 }
 
 // Split out from AddMemberPanel so this only mounts while `isOpen` is true
@@ -88,10 +88,8 @@ function AddMemberPanelBody({
     );
   };
 
-  const handleIdChange = (key: string, userPublicId: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.key === key ? { ...c, userPublicId } : c)),
-    );
+  const handleEmailChange = (key: string, email: string) => {
+    setCards((prev) => prev.map((c) => (c.key === key ? { ...c, email } : c)));
   };
 
   const handleRoleChange = (key: string, role: SpaceRole) => {
@@ -101,11 +99,11 @@ function AddMemberPanelBody({
   const handleSubmit = async () => {
     const trimmed = cards.map((card) => ({
       ...card,
-      userPublicId: card.userPublicId.trim(),
+      email: card.email.trim(),
     }));
-    const invalid = trimmed.find((card) => !card.userPublicId);
+    const invalid = trimmed.find((card) => !card.email);
     if (invalid) {
-      toast.error("Enter a user ID for every person.");
+      toast.error("Enter an email for every person.");
       return;
     }
 
@@ -113,7 +111,7 @@ function AddMemberPanelBody({
     try {
       await knowledgeSpaceMemberService.addMembers(spacePublicId, {
         members: trimmed.map((card) => ({
-          publicId: card.userPublicId,
+          email: card.email,
           role: card.role,
         })),
       });
@@ -187,12 +185,13 @@ function AddMemberPanelBody({
                 )}
               </div>
               <input
-                type="text"
-                value={card.userPublicId}
+                type="email"
+                autoComplete="email"
+                value={card.email}
                 onChange={(event) =>
-                  handleIdChange(card.key, event.target.value)
+                  handleEmailChange(card.key, event.target.value)
                 }
-                placeholder="User ID"
+                placeholder="Email"
                 className="border-border text-ink placeholder:text-ink-muted focus:border-accent mb-2 w-full rounded-md border px-3 py-2 text-sm outline-none"
               />
               <select

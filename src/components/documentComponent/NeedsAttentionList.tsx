@@ -40,7 +40,7 @@ export function NeedsAttentionList({
               <button
                 type="button"
                 onClick={() => onOpenResolve(item)}
-                className="bg-status-ready-bg text-status-ready-fg flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold"
+                className="bg-accent flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-white"
               >
                 <Check size={13} />
                 Resolve

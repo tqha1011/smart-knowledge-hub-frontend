@@ -76,7 +76,7 @@ export function Sidebar({
           : "flex w-full flex-col gap-1"
       }
     >
-      {/* Space switcher — mock: 3 memberships from mockCurrentUser, no GET /me yet */}
+      {/* Space switcher — memberships assembled from the real Space list, GET /users/me only supplies identity fields */}
       <div className="mb-4">
         <SpaceSwitcher
           memberships={currentUser.memberships}

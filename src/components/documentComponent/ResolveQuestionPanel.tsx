@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { toast } from "react-toastify";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 import { MarkdownContentEditor } from "./MarkdownContentEditor";
-import { unansweredQuestionService } from "../../services/unansweredQuestion";
+import { unansweredQuestionService } from "../../services/unansweredQuestionService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type { UnansweredQuestionData } from "../../types";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";

@@ -38,6 +38,7 @@ export interface SpaceListItemDto {
   publicId: string;
   name: string;
   totalDocuments: number;
+  typeName: string;
   role: SpaceRole;
 }
 
@@ -50,7 +51,7 @@ export interface UserDataSpaceDto {
 }
 
 export interface SpaceMember {
-  publicId: string;
+  email: string;
   role: SpaceRole;
 }
 

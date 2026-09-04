@@ -52,10 +52,16 @@ export const knowledgeSpaceService = {
     }
   },
 
-  getUserSpaces: async () => {
+  getUserSpaces: async (pageNumber?: number, pageSize?: number) => {
     try {
       const response = await api.get<PaginationResponse<SpaceListItemDto>>(
         `/${alias}/`,
+        {
+          params: {
+            pageNumber,
+            pageSize,
+          },
+        },
       );
       return response.data;
     } catch (error) {
@@ -63,10 +69,20 @@ export const knowledgeSpaceService = {
     }
   },
 
-  getListUser: async (spacePublicId: string) => {
+  getListUser: async (
+    spacePublicId: string,
+    pageNumber?: number,
+    pageSize?: number,
+  ) => {
     try {
       const response = await api.get<PaginationResponse<UserDataSpaceDto>>(
         `/${alias}/${spacePublicId}/members`,
+        {
+          params: {
+            pageNumber,
+            pageSize,
+          },
+        },
       );
       return response.data;
     } catch (error) {

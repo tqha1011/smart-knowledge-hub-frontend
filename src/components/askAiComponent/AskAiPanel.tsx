@@ -53,18 +53,30 @@ function toUiMessage(apiMessage: ChatMessageListData): ChatMessage {
 function toAssistantMessage(
   response: ChatMessageResponseDto,
 ): AssistantChatMessage {
+  // Defensive: the backend omits `sources` entirely on some responses
+  // (e.g. no citation found) instead of sending `[]`.
+  const sources = response.sources ?? [];
   return {
     id: response.messagePublicId,
     role: "assistant",
     answer: {
       text: response.content,
-      citations: response.sources.map((source, index) => ({
+      citations: sources.map((source, index) => ({
         chipNumber: index + 1,
         documentId: source.documentPublicId,
         documentTitle: source.documentTitle,
         excerpt: source.excerpt,
       })),
     },
+    feedback: null,
+  };
+}
+
+function buildBusyMessage(): AssistantChatMessage {
+  return {
+    id: `local-busy-${Date.now()}`,
+    role: "assistant",
+    answer: { text: "The system is busy. Please try again.", citations: [] },
     feedback: null,
   };
 }
@@ -97,12 +109,17 @@ export function AskAiPanel({
   const prefersReducedMotion = useReducedMotion();
   const isMountedRef = useRef(true);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // In StrictMode dev, React mounts, cleans up, then mounts again — the
+    // cleanup below flips this to false on the first (fake) unmount, and
+    // without resetting it here it stays false forever, silently no-oping
+    // every `isMountedRef.current` guarded setState in this component
+    // (including the one that adds the user's own message to the thread).
+    isMountedRef.current = true;
+    return () => {
       isMountedRef.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   const loadSessions = async () => {
     setIsLoadingSessions(true);
@@ -182,6 +199,8 @@ export function AskAiPanel({
     let sessionId = activeSessionId;
     const isNewSession = !sessionId;
 
+    let userMessageId: string | null = null;
+
     try {
       if (!sessionId) {
         const created = await chatService.createSession(selectedSpaceId);
@@ -194,6 +213,7 @@ export function AskAiPanel({
         role: "user",
         question,
       };
+      userMessageId = userMessage.id;
       if (isMountedRef.current) {
         setMessages((prev) => [...prev, userMessage]);
         setInputValue("");
@@ -206,21 +226,47 @@ export function AskAiPanel({
       });
       if (!isMountedRef.current) return;
 
-      setMessages((prev) => [...prev, toAssistantMessage(response)]);
+      // The request already succeeded server-side at this point — a bug in
+      // mapping/rendering the response below must not roll back the user's
+      // message, only surface its own error.
+      try {
+        setMessages((prev) => [...prev, toAssistantMessage(response)]);
 
-      if (response.sources.length === 0) {
-        onLogKnowledgeGap(question);
-      }
+        if ((response.sources ?? []).length === 0) {
+          onLogKnowledgeGap(question);
+        }
 
-      if (isNewSession) {
-        setTimeout(() => {
-          if (isMountedRef.current) loadSessions();
-        }, TITLE_REFRESH_DELAY_MS);
+        if (isNewSession) {
+          setTimeout(() => {
+            if (isMountedRef.current) loadSessions();
+          }, TITLE_REFRESH_DELAY_MS);
+        }
+      } catch (renderError) {
+        console.error("Failed to render assistant response", renderError);
+        toast.error("Got a reply, but couldn't display it.");
       }
     } catch (error) {
       if (isMountedRef.current) {
-        setMessages((prev) => prev.slice(0, -1));
-        toast.error(toErrorMessage(error as ApiErrorResponse));
+        const apiError = error as ApiErrorResponse;
+        if (apiError.statusCode === 500 && userMessageId) {
+          // The user's message was submitted fine — only the AI's answer
+          // failed server-side. Keep the question visible and answer in
+          // the thread itself rather than a toast, so the failure reads
+          // as part of the conversation instead of a message that
+          // silently vanished.
+          setMessages((prev) => [...prev, buildBusyMessage()]);
+          // A failed answer is itself a gap the queue may now know about
+          // server-side — resync the same way a successful zero-source
+          // answer does, so the Needs Attention list doesn't go stale.
+          onLogKnowledgeGap(question);
+        } else {
+          setMessages((prev) =>
+            userMessageId
+              ? prev.filter((message) => message.id !== userMessageId)
+              : prev,
+          );
+          toast.error(toErrorMessage(apiError));
+        }
       }
     } finally {
       if (isMountedRef.current) setIsSending(false);

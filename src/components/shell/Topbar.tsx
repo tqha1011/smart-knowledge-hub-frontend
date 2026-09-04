@@ -1,5 +1,6 @@
 import { Menu, Search } from "lucide-react";
 import { ThemeToggle } from "../common/ThemeToggle";
+import { UserMenu } from "./UserMenu";
 import type { CurrentUser } from "../../types";
 
 interface TopbarProps {
@@ -36,14 +37,7 @@ export function Topbar({ currentUser, onOpenMobileNav }: TopbarProps) {
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
         <ThemeToggle />
-        {/* Avatar chip — mock: derived from mockCurrentUser, no auth session yet */}
-        <span
-          aria-label={currentUser.name}
-          title={currentUser.name}
-          className="bg-avatar-bg text-avatar-fg flex size-9 items-center justify-center rounded-full font-sans text-xs font-semibold"
-        >
-          {currentUser.avatarInitials}
-        </span>
+        <UserMenu currentUser={currentUser} />
       </div>
     </header>
   );

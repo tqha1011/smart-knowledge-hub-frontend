@@ -9,11 +9,20 @@ import api from "./api";
 const firstAlias = "knowledge-spaces";
 const secondAlias = "unanswered-questions";
 export const unansweredQuestionService = {
-  getUnansweredQuestions: async (spacePublicId: string) => {
+  getUnansweredQuestions: async (
+    spacePublicId: string,
+    pageNumber?: number,
+    pageSize?: number,
+  ) => {
     try {
       const response = await api.get<
         PaginationResponse<UnansweredQuestionData>
-      >(`/${firstAlias}/${spacePublicId}/${secondAlias}`);
+      >(`/${firstAlias}/${spacePublicId}/${secondAlias}`, {
+        params: {
+          pageNumber,
+          pageSize,
+        },
+      });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -27,7 +36,7 @@ export const unansweredQuestionService = {
   ) => {
     try {
       const response = await api.patch(
-        `/${firstAlias}/${spacePublicId}/${secondAlias}/${questionPublicId}`,
+        `/${firstAlias}/${spacePublicId}/${secondAlias}/${questionPublicId}/resolve`,
         request,
       ); // return 200Ok { resolved: true }
       return response.data;

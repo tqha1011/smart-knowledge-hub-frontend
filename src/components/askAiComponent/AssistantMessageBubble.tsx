@@ -1,6 +1,7 @@
 import type { AskAiCitation, AssistantChatMessage } from "../../types";
 import { CitationChip } from "./CitationChip";
 import { FeedbackRow } from "./FeedbackRow";
+import { MarkdownMessage } from "./MarkdownMessage";
 
 interface AssistantMessageBubbleProps {
   message: AssistantChatMessage;
@@ -25,7 +26,7 @@ export function AssistantMessageBubble({
   return (
     <div className="mr-auto w-fit max-w-[85%]">
       <div className="bg-surface-sunken text-ink rounded-lg rounded-tl-sm px-3 py-2 text-sm">
-        <p className="whitespace-pre-wrap">{answer.text}</p>
+        <MarkdownMessage text={answer.text} />
         {answer.citations.length > 0 && (
           <ul className="border-border mt-2 flex flex-col gap-1.5 border-t pt-2">
             {answer.citations.map((citation: AskAiCitation) => (
