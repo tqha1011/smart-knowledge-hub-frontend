@@ -8,15 +8,17 @@ import { MobileNavDrawer } from "./MobileNavDrawer";
 import { BottomTabBar } from "./BottomTabBar";
 import { AskAiPanel } from "../askAiComponent/AskAiPanel";
 import type { ShellNavKey } from "./navItems";
-import { mockCurrentUser, spaceColorPalette } from "./shellMockData";
+import { spaceColorPalette } from "./shellMockData";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
 import { knowledgeSpaceService } from "../../services/spaceService";
 import { unansweredQuestionService } from "../../services/unansweredQuestion";
+import { toCurrentUser, userService } from "../../services/userService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type {
+  CurrentUser,
   Space,
   SpaceListItemDto,
   SpaceMembership,
@@ -42,6 +44,7 @@ export function PortalShell() {
   // the URL's pathname, which re-keys <Routes> in App.tsx and remounts this
   // component fresh, so there's no separate spaceId-change effect to write.
   const [spaces, setSpaces] = useState<SpaceListItemDto[] | null>(null);
+  const [meUser, setMeUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -49,6 +52,21 @@ export function PortalShell() {
       .getUserSpaces()
       .then((response) => {
         if (isActive) setSpaces(response.items);
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    userService
+      .getMe()
+      .then((dto) => {
+        if (isActive) setMeUser(toCurrentUser(dto));
       })
       .catch((error: ApiErrorResponse) => {
         if (isActive) toast.error(toErrorMessage(error));
@@ -101,7 +119,7 @@ export function PortalShell() {
 
   const needsAttentionCount = knowledgeGaps.length;
 
-  if (spaces === null) {
+  if (spaces === null || meUser === null) {
     return (
       <div className="bg-bg text-ink-muted flex h-dvh items-center justify-center text-sm">
         Loading…
@@ -120,13 +138,14 @@ export function PortalShell() {
   );
 
   // Space switcher needs every Space the user belongs to, each paired with
-  // its own role — mockCurrentUser only supplies identity fields (name,
-  // avatar, isAdmin) now; the memberships list itself is real.
+  // its own role — `GET /users/me` supplies identity fields (name, avatar,
+  // isAdmin) only, so the memberships list is attached from the separate
+  // Space list fetch above.
   const memberships: SpaceMembership[] = spaces.map((item, index) => ({
     space: toSpace(item, spaceColorPalette[index % spaceColorPalette.length]),
     role: item.role,
   }));
-  const currentUser = { ...mockCurrentUser, memberships };
+  const currentUser = { ...meUser, memberships };
 
   const canManage = currentUser.isAdmin || currentEntry.role === "Editor";
 

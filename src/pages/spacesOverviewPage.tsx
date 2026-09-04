@@ -5,13 +5,11 @@ import { toast } from "react-toastify";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
 import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
-import {
-  mockCurrentUser,
-  spaceColorPalette,
-} from "../components/shell/shellMockData";
+import { spaceColorPalette } from "../components/shell/shellMockData";
 import { knowledgeSpaceService } from "../services/spaceService";
+import { toCurrentUser, userService } from "../services/userService";
 import { toErrorMessage } from "../shared/handleApiError";
-import type { SpaceListItemDto } from "../types";
+import type { CurrentUser, SpaceListItemDto } from "../types";
 import type { ApiErrorResponse } from "../types/commonType/apiResponse";
 
 // Landing page after login — every Space the current user belongs to, one
@@ -21,7 +19,8 @@ import type { ApiErrorResponse } from "../types/commonType/apiResponse";
 // card itself is what routes into that Space's Document Library (portal shell).
 export function SpacesOverviewPage() {
   const navigate = useNavigate();
-  const currentUser = mockCurrentUser; // MOCK: stand-in for GET /me, no auth session yet
+  // null = still loading.
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [spaces, setSpaces] = useState<SpaceListItemDto[]>([]);
   const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
 
@@ -32,6 +31,21 @@ export function SpacesOverviewPage() {
     } catch (error) {
       toast.error(toErrorMessage(error as ApiErrorResponse));
     }
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    userService
+      .getMe()
+      .then((dto) => {
+        if (isActive) setCurrentUser(toCurrentUser(dto));
+      })
+      .catch((error: ApiErrorResponse) => {
+        if (isActive) toast.error(toErrorMessage(error));
+      });
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -53,6 +67,14 @@ export function SpacesOverviewPage() {
     localStorage.removeItem("accessToken");
     navigate("/login", { replace: true });
   };
+
+  if (currentUser === null) {
+    return (
+      <div className="bg-bg text-ink-muted flex h-dvh items-center justify-center text-sm">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <PageTransition>
@@ -85,7 +107,6 @@ export function SpacesOverviewPage() {
         <main className="mx-auto max-w-5xl px-6 py-10">
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              {/* MOCK: greeting uses mockCurrentUser.name, no real time-of-day logic */}
               <h1 className="font-display text-ink text-3xl font-semibold">
                 Good morning, {currentUser.name.split(" ")[0]}
               </h1>

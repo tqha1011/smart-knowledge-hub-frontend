@@ -12,7 +12,7 @@ export type {
   KickMemberRequest,
   UpdateRoleRequest,
 } from "./commonType/space";
-export type { CurrentUser } from "./commonType/user";
+export type { CurrentUser, CurrentUserDto } from "./commonType/user";
 export type {
   DocumentAuthor,
   DocumentFileType,
