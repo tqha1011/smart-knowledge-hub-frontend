@@ -36,7 +36,7 @@ export const unansweredQuestionService = {
   ) => {
     try {
       const response = await api.patch(
-        `/${firstAlias}/${spacePublicId}/${secondAlias}/${questionPublicId}`,
+        `/${firstAlias}/${spacePublicId}/${secondAlias}/${questionPublicId}/resolve`,
         request,
       ); // return 200Ok { resolved: true }
       return response.data;
