@@ -4,6 +4,7 @@ import { History, Plus, Send, Sparkles, X } from "lucide-react";
 import type { ChatMessage, ChatSessionListData } from "../../types";
 import { UserMessageBubble } from "./UserMessageBubble";
 import { AssistantMessageBubble } from "./AssistantMessageBubble";
+import { ThinkingIndicator } from "./ThinkingIndicator";
 import { ChatSessionList } from "./ChatSessionList";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 
@@ -65,7 +66,7 @@ export function AskAiPanelBody({
     threadEndRef.current?.scrollIntoView({
       behavior: prefersReducedMotion ? "auto" : "smooth",
     });
-  }, [messages.length, prefersReducedMotion]);
+  }, [messages.length, isSending, prefersReducedMotion]);
 
   return (
     <div className="fixed inset-0 z-40">
@@ -150,17 +151,20 @@ export function AskAiPanelBody({
                   Ask a question about a document in this space.
                 </div>
               ) : (
-                messages.map((message) =>
-                  message.role === "user" ? (
-                    <UserMessageBubble key={message.id} message={message} />
-                  ) : (
-                    <AssistantMessageBubble
-                      key={message.id}
-                      message={message}
-                      onFeedback={onFeedback}
-                    />
-                  ),
-                )
+                <>
+                  {messages.map((message) =>
+                    message.role === "user" ? (
+                      <UserMessageBubble key={message.id} message={message} />
+                    ) : (
+                      <AssistantMessageBubble
+                        key={message.id}
+                        message={message}
+                        onFeedback={onFeedback}
+                      />
+                    ),
+                  )}
+                  {isSending && <ThinkingIndicator />}
+                </>
               )}
               {messages.length > 0 && <div ref={threadEndRef} />}
             </div>
