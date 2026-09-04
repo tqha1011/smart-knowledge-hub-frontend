@@ -54,4 +54,11 @@ export type {
   LoginDto,
   SetPasswordDto,
   InviteContextDto,
+  RegisterDto,
+  CreateUserDto,
+  ChangePasswordDto,
+  SendOtpDto,
+  VerifyOtpDto,
+  VerifyOtpResult,
+  ResetPasswordDto,
 } from "./authType/auth";

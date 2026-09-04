@@ -1,12 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, TriangleAlert } from "lucide-react";
 import { toast } from "react-toastify";
 import { AuthCard } from "../components/authComponent/AuthCard";
 import { CustomInput } from "../components/authComponent/CustomInput";
 import { PageTransition } from "../components/common/PageTransition";
-import { login } from "../services/authService";
+import { authService } from "../services/authService";
 
 // `/login` — returning users only. No self-registration: accounts are
 // provisioned by an Admin (see `/set-password` for invite acceptance).
@@ -29,7 +29,7 @@ export function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const { accessToken } = await login({ email, password });
+      const { accessToken } = await authService.login({ email, password });
       // MOCK: a real backend would issue a real session token here.
       // "Keep me signed in" has nothing to control yet without one.
       localStorage.setItem("accessToken", accessToken);
@@ -93,13 +93,12 @@ export function LoginPage() {
               />
               Keep me signed in
             </label>
-            {/* MOCK: no password-reset flow/backend yet */}
-            <span
-              className="text-ink-muted cursor-not-allowed text-sm font-medium"
-              title="Not available yet"
+            <Link
+              to="/forgot-password"
+              className="text-accent text-sm font-medium"
             >
               Forgot password?
-            </span>
+            </Link>
           </div>
 
           <button
