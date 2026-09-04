@@ -38,6 +38,7 @@ export interface SpaceListItemDto {
   publicId: string;
   name: string;
   totalDocuments: number;
+  typeName: string;
   role: SpaceRole;
 }
 

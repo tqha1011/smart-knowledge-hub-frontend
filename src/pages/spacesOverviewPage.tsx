@@ -134,9 +134,14 @@ export function SpacesOverviewPage() {
                       <h2 className="font-display text-ink text-lg font-semibold">
                         {space.name}
                       </h2>
-                      <span className="text-ink-muted text-xs">
-                        {space.role}
-                      </span>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-ink-muted text-xs">
+                          {space.role}
+                        </span>
+                        <span className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-xs font-medium">
+                          {space.typeName}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-ink-muted flex items-center gap-3 font-mono text-xs">
                       <span>{space.totalDocuments} documents</span>
