@@ -51,7 +51,7 @@ export interface UserDataSpaceDto {
 }
 
 export interface SpaceMember {
-  publicId: string;
+  email: string;
   role: SpaceRole;
 }
 
