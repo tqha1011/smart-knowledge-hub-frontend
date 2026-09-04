@@ -14,7 +14,7 @@ import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
 import { PageTransition } from "../common/PageTransition";
 import { knowledgeSpaceService } from "../../services/spaceService";
-import { unansweredQuestionService } from "../../services/unansweredQuestion";
+import { unansweredQuestionService } from "../../services/unansweredQuestionService";
 import { toCurrentUser, userService } from "../../services/userService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type {

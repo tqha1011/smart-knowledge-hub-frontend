@@ -17,10 +17,15 @@ import api from "./api";
 const firstAlias = "knowledge-spaces";
 const afterAlias = "documents";
 export const documentService = {
-  getListDocumentsForUser: async (spacePublicId: string) => {
+  getListDocumentsForUser: async (
+    spacePublicId: string,
+    pageNumber?: number,
+    pageSize?: number,
+  ) => {
     try {
       const response = await api.get<PaginationResponse<DocumentListItemDto>>(
         `${firstAlias}/${spacePublicId}/${afterAlias}`,
+        { params: { pageNumber, pageSize } },
       );
       return response.data;
     } catch (error) {
