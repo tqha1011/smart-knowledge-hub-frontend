@@ -3,6 +3,7 @@ import type { DocumentListItemDto } from "../../types";
 import {
   FILE_TYPE_BADGE_CLASS,
   FILE_TYPE_ICON,
+  STATUS_BADGE,
   formatRelativeDate,
   initialsFromName,
   splitDocumentName,
@@ -40,6 +41,9 @@ export function DocumentTable({
             <th className="px-4 py-2.5 font-medium">Name</th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
               Type
+            </th>
+            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+              Status
             </th>
             <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
               Category
@@ -84,6 +88,13 @@ export function DocumentTable({
                     className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium whitespace-nowrap ${FILE_TYPE_BADGE_CLASS[doc.fileType]}`}
                   >
                     {extension}
+                  </span>
+                </td>
+                <td className="hidden px-4 py-3 sm:table-cell">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE[doc.status].className}`}
+                  >
+                    {STATUS_BADGE[doc.status].label}
                   </span>
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">

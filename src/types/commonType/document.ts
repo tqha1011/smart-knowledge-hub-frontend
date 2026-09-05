@@ -102,6 +102,7 @@ export interface DocumentListItemDto {
   publicId: string;
   title: string;
   fileType: DocumentFileType;
+  status: DocumentStatus;
   visibility: DocumentVisibility;
   lastUpdated: Date;
   category: {

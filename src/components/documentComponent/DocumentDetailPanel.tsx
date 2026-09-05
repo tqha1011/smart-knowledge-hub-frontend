@@ -6,6 +6,7 @@ import type { DocumentDetailsDto, Space } from "../../types";
 import {
   FILE_TYPE_ICON,
   FILE_TYPE_LABEL,
+  STATUS_BADGE,
   formatFileSize,
   formatRelativeDate,
   initialsFromName,
@@ -214,6 +215,16 @@ function DocumentDetailPanelBody({
                 style={{ backgroundColor: space.colorDot }}
               />
               {space.name}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-ink-muted text-xs">Status</dt>
+            <dd className="mt-0.5">
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE[document.status].className}`}
+              >
+                {STATUS_BADGE[document.status].label}
+              </span>
             </dd>
           </div>
           <div>
