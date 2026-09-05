@@ -1,7 +1,7 @@
 import type { AskAiCitation, AssistantChatMessage } from "../../types";
 import { CitationChip } from "./CitationChip";
 import { FeedbackRow } from "./FeedbackRow";
-import { MarkdownMessage } from "./MarkdownMessage";
+import { MarkdownMessage } from "../common/MarkdownMessage";
 
 interface AssistantMessageBubbleProps {
   message: AssistantChatMessage;

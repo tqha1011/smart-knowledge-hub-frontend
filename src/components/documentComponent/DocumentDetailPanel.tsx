@@ -11,6 +11,7 @@ import {
   initialsFromName,
 } from "./documentDisplay";
 import { usePanelDismiss } from "../common/usePanelDismiss";
+import { MarkdownMessage } from "../common/MarkdownMessage";
 import { documentService } from "../../services/documentService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
@@ -352,9 +353,10 @@ function DocumentDetailPanelBody({
             <ul className="divide-border border-border mt-2 divide-y overflow-hidden rounded-lg border">
               {document.citedQuestion.map((citation) => (
                 <li key={citation.publicId} className="px-3 py-2.5">
-                  <p className="text-ink text-sm font-medium">
-                    {citation.name}
-                  </p>
+                  <MarkdownMessage
+                    text={citation.name}
+                    className="text-ink text-sm font-medium"
+                  />
                   <p className="text-ink-muted mt-0.5 font-mono text-xs">
                     Last asked {formatRelativeDate(citation.lastAsked)}
                   </p>
