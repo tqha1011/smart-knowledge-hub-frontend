@@ -6,8 +6,10 @@ import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
 import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
 import { spaceColorPalette } from "../components/shell/shellMockData";
+import { authService } from "../services/authService";
 import { knowledgeSpaceService } from "../services/spaceService";
 import { toCurrentUser, userService } from "../services/userService";
+import { clearSession, getRefreshToken } from "../shared/authSession";
 import { toErrorMessage } from "../shared/handleApiError";
 import type { CurrentUser, SpaceListItemDto } from "../types";
 import type { ApiErrorResponse } from "../types/commonType/apiResponse";
@@ -63,9 +65,16 @@ export function SpacesOverviewPage() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    navigate("/login", { replace: true });
+  const handleLogout = async () => {
+    const refreshToken = getRefreshToken();
+    try {
+      if (refreshToken) await authService.logout(refreshToken);
+    } catch {
+      // best-effort — still clear the local session even if this fails
+    } finally {
+      clearSession();
+      navigate("/login", { replace: true });
+    }
   };
 
   if (currentUser === null) {

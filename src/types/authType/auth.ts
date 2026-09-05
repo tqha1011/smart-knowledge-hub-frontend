@@ -3,6 +3,11 @@ import type { SpaceRole } from "../commonType/space";
 export interface LoginDto {
   email: string;
   password: string;
+  rememberMe?: boolean;
+}
+
+export interface RefreshTokenRequestDto {
+  refreshToken: string;
 }
 
 export interface SetPasswordDto {

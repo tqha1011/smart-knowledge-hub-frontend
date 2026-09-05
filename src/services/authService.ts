@@ -3,6 +3,7 @@ import type {
   CreateUserDto,
   InviteContextDto,
   LoginDto,
+  RefreshTokenRequestDto,
   RegisterDto,
   ResetPasswordDto,
   SendOtpDto,
@@ -15,6 +16,12 @@ import api from "./api";
 
 export interface LoginResult {
   accessToken: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenResult {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface MessageResult {
@@ -31,7 +38,30 @@ export const authService = {
       const response = await api.post<LoginResult>("/auth/login", {
         email: credentials.email,
         password: credentials.password,
+        rememberMe: credentials.rememberMe,
       });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  refresh: async (refreshToken: string) => {
+    try {
+      const response = await api.post<RefreshTokenResult>("/auth/refresh", {
+        refreshToken,
+      } satisfies RefreshTokenRequestDto);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  logout: async (refreshToken: string) => {
+    try {
+      const response = await api.post<MessageResult>("/auth/logout", {
+        refreshToken,
+      } satisfies RefreshTokenRequestDto);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

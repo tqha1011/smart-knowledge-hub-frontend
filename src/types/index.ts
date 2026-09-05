@@ -61,4 +61,5 @@ export type {
   VerifyOtpDto,
   VerifyOtpResult,
   ResetPasswordDto,
+  RefreshTokenRequestDto,
 } from "./authType/auth";
