@@ -94,7 +94,7 @@ export function LoginPage() {
                 onChange={(event) => setKeepSignedIn(event.target.checked)}
                 className="accent-accent size-4 rounded"
               />
-              Keep me signed in
+              Keep me signed in for 30 days
             </label>
             <Link
               to="/forgot-password"
