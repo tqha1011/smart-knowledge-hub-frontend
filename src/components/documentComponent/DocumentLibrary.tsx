@@ -7,6 +7,7 @@ import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
+import { ReplaceFilePanel } from "./ReplaceFilePanel";
 import { ResolveQuestionPanel } from "./ResolveQuestionPanel";
 import { Pagination } from "../common/Pagination";
 import { documentService } from "../../services/documentService";
@@ -71,6 +72,10 @@ export function DocumentLibrary({
 
   const [isFormPanelOpen, setIsFormPanelOpen] = useState(false);
   const [formPanelDocument, setFormPanelDocument] =
+    useState<DocumentDetailsDto | null>(null);
+
+  const [isReplacePanelOpen, setIsReplacePanelOpen] = useState(false);
+  const [replaceDocument, setReplaceDocument] =
     useState<DocumentDetailsDto | null>(null);
 
   const [isResolvePanelOpen, setIsResolvePanelOpen] = useState(false);
@@ -176,6 +181,21 @@ export function DocumentLibrary({
 
   const handleCloseFormPanel = () => {
     setIsFormPanelOpen(false);
+  };
+
+  const handleReplaceFile = (detail: DocumentDetailsDto) => {
+    setIsDetailPanelOpen(false);
+    setReplaceDocument(detail);
+    setIsReplacePanelOpen(true);
+  };
+
+  const handleCloseReplacePanel = () => {
+    setIsReplacePanelOpen(false);
+  };
+
+  const handleReplaced = () => {
+    setIsReplacePanelOpen(false);
+    loadDocuments(pageNumber);
   };
 
   // Clear the active category filter on a successful create/update so the
@@ -295,6 +315,7 @@ export function DocumentLibrary({
         canManage={canManage}
         onClose={handleCloseDetail}
         onEditDetails={handleEditDetails}
+        onReplaceFile={handleReplaceFile}
       />
 
       <DocumentFormPanel
@@ -304,6 +325,14 @@ export function DocumentLibrary({
         categories={categories}
         onClose={handleCloseFormPanel}
         onSaved={handleFormSaved}
+      />
+
+      <ReplaceFilePanel
+        isOpen={isReplacePanelOpen}
+        document={replaceDocument}
+        spacePublicId={spacePublicId}
+        onClose={handleCloseReplacePanel}
+        onReplaced={handleReplaced}
       />
 
       <ResolveQuestionPanel

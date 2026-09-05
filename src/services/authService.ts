@@ -153,11 +153,3 @@ export async function resolveInvite(
     role: "Editor",
   };
 }
-
-// MOCK: stands in for the invite-acceptance endpoint that finalizes a
-// provisioned account's password — not part of the auth API table this
-// service otherwise implements; no backend contract yet.
-export async function setPassword(data: SetPasswordDto): Promise<void> {
-  void data;
-  await new Promise((resolve) => setTimeout(resolve, 300));
-}

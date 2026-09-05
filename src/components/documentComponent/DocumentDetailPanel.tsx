@@ -25,6 +25,7 @@ interface DocumentDetailPanelProps {
   canManage: boolean;
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
+  onReplaceFile: (document: DocumentDetailsDto) => void;
 }
 
 // Floating slide-over panel (420px, right-aligned), same pattern as
@@ -38,6 +39,7 @@ export function DocumentDetailPanel({
   canManage,
   onClose,
   onEditDetails,
+  onReplaceFile,
 }: DocumentDetailPanelProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -50,6 +52,7 @@ export function DocumentDetailPanel({
           canManage={canManage}
           onClose={onClose}
           onEditDetails={onEditDetails}
+          onReplaceFile={onReplaceFile}
           prefersReducedMotion={prefersReducedMotion}
         />
       )}
@@ -63,6 +66,7 @@ interface DocumentDetailPanelBodyProps {
   canManage: boolean;
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
+  onReplaceFile: (document: DocumentDetailsDto) => void;
   prefersReducedMotion: boolean | null;
 }
 
@@ -76,6 +80,7 @@ function DocumentDetailPanelBody({
   canManage,
   onClose,
   onEditDetails,
+  onReplaceFile,
   prefersReducedMotion,
 }: DocumentDetailPanelBodyProps) {
   const [document, setDocument] = useState<DocumentDetailsDto | null>(null);
@@ -117,10 +122,6 @@ function DocumentDetailPanelBody({
         newTab?.close();
         toast.error(toErrorMessage(error as ApiErrorResponse));
       });
-  };
-
-  const handleReplaceFile = () => {
-    toast.info("Replace file isn't built yet.");
   };
 
   const handleDelete = () => {
@@ -313,7 +314,7 @@ function DocumentDetailPanelBody({
                 </button>
                 <button
                   type="button"
-                  onClick={handleReplaceFile}
+                  onClick={() => onReplaceFile(document)}
                   className="border-border text-ink hover:bg-surface-sunken flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
                 >
                   <RefreshCw size={14} />

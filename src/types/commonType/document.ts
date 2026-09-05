@@ -69,6 +69,7 @@ export interface DocumentUpdateInput {
   categoryPublicId?: string | null;
   description?: string | null;
   visibility?: DocumentVisibility | null;
+  storageKey?: string;
 }
 
 export interface DocumentUploadUrlResponse {

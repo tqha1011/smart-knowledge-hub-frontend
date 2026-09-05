@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { AuthCard } from "../components/authComponent/AuthCard";
 import { CustomInput } from "../components/authComponent/CustomInput";
 import { PageTransition } from "../components/common/PageTransition";
-import { resolveInvite, setPassword } from "../services/authService";
+import { authService, resolveInvite } from "../services/authService";
 import type { InviteContextDto } from "../types";
 
 // `/set-password?token=...` — invite acceptance / first-time password
@@ -18,6 +18,7 @@ export function SetPasswordPage() {
 
   const [invite, setInvite] = useState<InviteContextDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [password, setPasswordValue] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -35,6 +36,10 @@ export function SetPasswordPage() {
     event.preventDefault();
     setFormError(null);
 
+    if (!temporaryPassword) {
+      setFormError("Enter the temporary password from your invite email.");
+      return;
+    }
     if (password.length < 8 || !/\d/.test(password)) {
       setFormError(
         "Password must be at least 8 characters and include a number.",
@@ -48,7 +53,10 @@ export function SetPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      await setPassword({ password });
+      await authService.setPassword({
+        oldPassword: temporaryPassword,
+        newPassword: password,
+      });
       toast.success("Password set. You can now sign in.");
       navigate("/login", { replace: true });
     } catch {
@@ -96,6 +104,21 @@ export function SetPasswordPage() {
             value={invite?.email ?? ""}
             disabled
           />
+          <div className="flex flex-col gap-1">
+            <CustomInput
+              id="temporary-password"
+              label="Temporary password"
+              type="password"
+              autoComplete="current-password"
+              icon={<Lock size={16} />}
+              value={temporaryPassword}
+              onChange={(event) => setTemporaryPassword(event.target.value)}
+              placeholder="••••••••"
+            />
+            <p className="text-ink-muted text-xs">
+              Sent to you in the invite email
+            </p>
+          </div>
           <div className="flex flex-col gap-1">
             <CustomInput
               id="new-password"

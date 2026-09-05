@@ -10,10 +10,6 @@ export interface RefreshTokenRequestDto {
   refreshToken: string;
 }
 
-export interface SetPasswordDto {
-  password: string;
-}
-
 export interface InviteContextDto {
   email: string;
   spaceName: string;
