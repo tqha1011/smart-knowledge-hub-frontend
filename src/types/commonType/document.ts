@@ -69,6 +69,7 @@ export interface DocumentUpdateInput {
   categoryPublicId?: string | null;
   description?: string | null;
   visibility?: DocumentVisibility | null;
+  storageKey?: string;
 }
 
 export interface DocumentUploadUrlResponse {
@@ -83,6 +84,12 @@ export interface DocumentUploadUrlRequest {
   fileSize: number;
 }
 
+export interface DocumentDownloadUrlResponse {
+  downloadUrl: string;
+}
+
+export type DocumentDownloadDisposition = "inline" | "attachment";
+
 export interface DocumentCreateRequest {
   name: string;
   description: string | null;
@@ -96,6 +103,7 @@ export interface DocumentListItemDto {
   publicId: string;
   title: string;
   fileType: DocumentFileType;
+  status: DocumentStatus;
   visibility: DocumentVisibility;
   lastUpdated: Date;
   category: {

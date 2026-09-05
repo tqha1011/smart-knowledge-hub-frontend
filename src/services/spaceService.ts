@@ -154,7 +154,7 @@ export const knowledgeSpaceMemberService = {
     request: UpdateRoleRequest,
   ) => {
     try {
-      const response = await api.put(
+      const response = await api.patch(
         `/${alias}/${spacePublicId}/members/${userPublicId}`,
         request,
       );

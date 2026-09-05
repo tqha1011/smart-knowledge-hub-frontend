@@ -1,7 +1,9 @@
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { AskAiCitation, AssistantChatMessage } from "../../types";
 import { CitationChip } from "./CitationChip";
 import { FeedbackRow } from "./FeedbackRow";
-import { MarkdownMessage } from "./MarkdownMessage";
+import { MarkdownMessage } from "../common/MarkdownMessage";
 
 interface AssistantMessageBubbleProps {
   message: AssistantChatMessage;
@@ -11,6 +13,11 @@ interface AssistantMessageBubbleProps {
     comment?: string,
   ) => void;
 }
+
+// How many citations show by default — collapsed behind a "Show N more
+// sources" toggle beyond this. Count-based rather than height-based since
+// citation excerpts vary in length; a fixed item count is more predictable.
+const VISIBLE_CITATIONS_COUNT = 2;
 
 // Left-aligned, neutral bubble for assistant answers. The backend doesn't
 // mark where in the answer text a source applies (no inline citation
@@ -22,6 +29,13 @@ export function AssistantMessageBubble({
   onFeedback,
 }: AssistantMessageBubbleProps) {
   const { answer } = message;
+  const [showAllCitations, setShowAllCitations] = useState(false);
+
+  const visibleCitations = showAllCitations
+    ? answer.citations
+    : answer.citations.slice(0, VISIBLE_CITATIONS_COUNT);
+  const hiddenCitationsCount =
+    answer.citations.length - VISIBLE_CITATIONS_COUNT;
 
   return (
     <div className="mr-auto w-fit max-w-[85%]">
@@ -29,7 +43,7 @@ export function AssistantMessageBubble({
         <MarkdownMessage text={answer.text} />
         {answer.citations.length > 0 && (
           <ul className="border-border mt-2 flex flex-col gap-1.5 border-t pt-2">
-            {answer.citations.map((citation: AskAiCitation) => (
+            {visibleCitations.map((citation: AskAiCitation) => (
               <li key={citation.chipNumber} className="text-xs">
                 <div className="flex items-center gap-1.5">
                   <CitationChip number={citation.chipNumber} />
@@ -45,6 +59,22 @@ export function AssistantMessageBubble({
               </li>
             ))}
           </ul>
+        )}
+        {hiddenCitationsCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAllCitations((prev) => !prev)}
+            className="text-accent mt-1.5 flex items-center gap-1 text-xs font-semibold"
+          >
+            {showAllCitations
+              ? "Show less"
+              : `Show ${hiddenCitationsCount} more source${hiddenCitationsCount === 1 ? "" : "s"}`}
+            {showAllCitations ? (
+              <ChevronUp size={13} />
+            ) : (
+              <ChevronDown size={13} />
+            )}
+          </button>
         )}
       </div>
       <FeedbackRow

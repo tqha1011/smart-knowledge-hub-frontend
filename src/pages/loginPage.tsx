@@ -7,6 +7,7 @@ import { AuthCard } from "../components/authComponent/AuthCard";
 import { CustomInput } from "../components/authComponent/CustomInput";
 import { PageTransition } from "../components/common/PageTransition";
 import { authService } from "../services/authService";
+import { setSession } from "../shared/authSession";
 
 // `/login` — returning users only. No self-registration: accounts are
 // provisioned by an Admin (see `/set-password` for invite acceptance).
@@ -29,10 +30,12 @@ export function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const { accessToken } = await authService.login({ email, password });
-      // MOCK: a real backend would issue a real session token here.
-      // "Keep me signed in" has nothing to control yet without one.
-      localStorage.setItem("accessToken", accessToken);
+      const { accessToken, refreshToken } = await authService.login({
+        email,
+        password,
+        rememberMe: keepSignedIn,
+      });
+      setSession(accessToken, refreshToken);
       toast.success("Signed in successfully.");
       navigate("/spaces", { replace: true });
     } catch {
@@ -91,7 +94,7 @@ export function LoginPage() {
                 onChange={(event) => setKeepSignedIn(event.target.checked)}
                 className="accent-accent size-4 rounded"
               />
-              Keep me signed in
+              Keep me signed in for 30 days
             </label>
             <Link
               to="/forgot-password"

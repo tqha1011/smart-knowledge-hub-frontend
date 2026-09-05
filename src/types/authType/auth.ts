@@ -3,10 +3,11 @@ import type { SpaceRole } from "../commonType/space";
 export interface LoginDto {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
-export interface SetPasswordDto {
-  password: string;
+export interface RefreshTokenRequestDto {
+  refreshToken: string;
 }
 
 export interface InviteContextDto {
@@ -49,5 +50,10 @@ export interface VerifyOtpResult {
 export interface ResetPasswordDto {
   email: string;
   resetToken: string;
+  newPassword: string;
+}
+
+export interface SetPasswordDto {
+  oldPassword: string;
   newPassword: string;
 }

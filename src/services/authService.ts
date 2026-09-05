@@ -3,6 +3,7 @@ import type {
   CreateUserDto,
   InviteContextDto,
   LoginDto,
+  RefreshTokenRequestDto,
   RegisterDto,
   ResetPasswordDto,
   SendOtpDto,
@@ -15,6 +16,12 @@ import api from "./api";
 
 export interface LoginResult {
   accessToken: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenResult {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface MessageResult {
@@ -31,7 +38,30 @@ export const authService = {
       const response = await api.post<LoginResult>("/auth/login", {
         email: credentials.email,
         password: credentials.password,
+        rememberMe: credentials.rememberMe,
       });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  refresh: async (refreshToken: string) => {
+    try {
+      const response = await api.post<RefreshTokenResult>("/auth/refresh", {
+        refreshToken,
+      } satisfies RefreshTokenRequestDto);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  logout: async (refreshToken: string) => {
+    try {
+      const response = await api.post<MessageResult>("/auth/logout", {
+        refreshToken,
+      } satisfies RefreshTokenRequestDto);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -97,6 +127,15 @@ export const authService = {
       throw handleApiError(error);
     }
   },
+
+  setPassword: async (data: SetPasswordDto) => {
+    try {
+      const response = await api.patch<MessageResult>("/auth/password", data);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
 
 // MOCK: stands in for `GET /invites/:token` — not part of the auth API
@@ -113,12 +152,4 @@ export async function resolveInvite(
     spaceName: "Engineering",
     role: "Editor",
   };
-}
-
-// MOCK: stands in for the invite-acceptance endpoint that finalizes a
-// provisioned account's password — not part of the auth API table this
-// service otherwise implements; no backend contract yet.
-export async function setPassword(data: SetPasswordDto): Promise<void> {
-  void data;
-  await new Promise((resolve) => setTimeout(resolve, 300));
 }

@@ -3,6 +3,7 @@ import remarkGfm from "remark-gfm";
 
 interface MarkdownMessageProps {
   text: string;
+  className?: string;
 }
 
 // No @tailwindcss/typography plugin in this project, so each element is
@@ -81,14 +82,17 @@ const markdownComponents: Components = {
   ),
 };
 
-// Assistant answers can come back as Markdown (headings, lists, code,
-// tables, links) — rendered here instead of as a plain <p> of raw text.
-// react-markdown doesn't render raw HTML unless rehype-raw is added, so
-// this stays safe against HTML/script injection from the response text
-// without needing a separate sanitizer.
-export function MarkdownMessage({ text }: MarkdownMessageProps) {
+// Markdown answers/citations (headings, lists, code, tables, links) are
+// rendered here instead of as a plain <p> of raw text. react-markdown
+// doesn't render raw HTML unless rehype-raw is added, so this stays safe
+// against HTML/script injection from the response text without needing a
+// separate sanitizer.
+export function MarkdownMessage({
+  text,
+  className = "text-sm leading-relaxed",
+}: MarkdownMessageProps) {
   return (
-    <div className="text-sm leading-relaxed *:first:mt-0 *:last:mb-0">
+    <div className={`${className} *:first:mt-0 *:last:mb-0`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={markdownComponents}

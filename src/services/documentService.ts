@@ -6,6 +6,8 @@ import type {
   DocumentDetailsDto,
   DocumentUploadUrlRequest,
   DocumentUploadUrlResponse,
+  DocumentDownloadUrlResponse,
+  DocumentDownloadDisposition,
   DocumentCreateRequest,
   DocumentPermissionRequest,
   DocumentPermissionRequestBody,
@@ -62,12 +64,17 @@ export const documentService = {
     }
   },
 
-  getDownloadUrl: async (documentPublicId: string, spacePublicId: string) => {
+  getDownloadUrl: async (
+    documentPublicId: string,
+    spacePublicId: string,
+    disposition: DocumentDownloadDisposition,
+  ) => {
     try {
-      const response = await api.get<string>(
+      const response = await api.get<DocumentDownloadUrlResponse>(
         `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/download-url`,
+        { params: { disposition } },
       );
-      return response.data;
+      return response.data.downloadUrl;
     } catch (error) {
       throw handleApiError(error);
     }

@@ -7,7 +7,9 @@ import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
+import { ReplaceFilePanel } from "./ReplaceFilePanel";
 import { ResolveQuestionPanel } from "./ResolveQuestionPanel";
+import { Pagination } from "../common/Pagination";
 import { documentService } from "../../services/documentService";
 import { categoryService } from "../../services/categoryService";
 import { toErrorMessage } from "../../shared/handleApiError";
@@ -31,6 +33,8 @@ interface DocumentLibraryProps {
   knowledgeGaps: UnansweredQuestionData[];
   /** Called after a question is resolved so the parent can refetch the queue (it also owns the sidebar/rail badge counts). */
   onGapsChanged: () => void;
+  /** Bumped by the parent after the Assistant answers a question — triggers a refetch of the current page so a newly-cited document's count stays fresh. */
+  refreshSignal: number;
 }
 
 // Page structure per spec: title + subtitle + Upload button, tabs, category
@@ -47,10 +51,17 @@ export function DocumentLibrary({
   onTabChange,
   knowledgeGaps,
   onGapsChanged,
+  refreshSignal,
 }: DocumentLibraryProps) {
   const spacePublicId = space.id;
 
   const [documents, setDocuments] = useState<DocumentListItemDto[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    hasPrevious: false,
+    hasNext: false,
+  });
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -63,6 +74,10 @@ export function DocumentLibrary({
   const [formPanelDocument, setFormPanelDocument] =
     useState<DocumentDetailsDto | null>(null);
 
+  const [isReplacePanelOpen, setIsReplacePanelOpen] = useState(false);
+  const [replaceDocument, setReplaceDocument] =
+    useState<DocumentDetailsDto | null>(null);
+
   const [isResolvePanelOpen, setIsResolvePanelOpen] = useState(false);
   const [questionToResolve, setQuestionToResolve] =
     useState<UnansweredQuestionData | null>(null);
@@ -71,15 +86,25 @@ export function DocumentLibrary({
   // an effect) — the mount fetch below is written inline instead of
   // calling these, since calling a setState-bearing function from inside
   // an effect body trips react-hooks/set-state-in-effect.
-  const loadDocuments = useCallback(async () => {
-    try {
-      const response =
-        await documentService.getListDocumentsForUser(spacePublicId);
-      setDocuments(response.items);
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, [spacePublicId]);
+  const loadDocuments = useCallback(
+    async (page: number) => {
+      try {
+        const response = await documentService.getListDocumentsForUser(
+          spacePublicId,
+          page,
+        );
+        setDocuments(response.items);
+        setPagination({
+          totalPages: response.totalPages,
+          hasPrevious: response.hasPrevious,
+          hasNext: response.hasNext,
+        });
+      } catch (error) {
+        toast.error(toErrorMessage(error as ApiErrorResponse));
+      }
+    },
+    [spacePublicId],
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -93,13 +118,27 @@ export function DocumentLibrary({
   useEffect(() => {
     let isActive = true;
     documentService
-      .getListDocumentsForUser(spacePublicId)
+      .getListDocumentsForUser(spacePublicId, pageNumber)
       .then((response) => {
-        if (isActive) setDocuments(response.items);
+        if (isActive) {
+          setDocuments(response.items);
+          setPagination({
+            totalPages: response.totalPages,
+            hasPrevious: response.hasPrevious,
+            hasNext: response.hasNext,
+          });
+        }
       })
       .catch((error: ApiErrorResponse) => {
         if (isActive) toast.error(toErrorMessage(error));
       });
+    return () => {
+      isActive = false;
+    };
+  }, [spacePublicId, pageNumber, refreshSignal]);
+
+  useEffect(() => {
+    let isActive = true;
     categoryService
       .getListCategory(spacePublicId)
       .then((response) => {
@@ -144,12 +183,28 @@ export function DocumentLibrary({
     setIsFormPanelOpen(false);
   };
 
+  const handleReplaceFile = (detail: DocumentDetailsDto) => {
+    setIsDetailPanelOpen(false);
+    setReplaceDocument(detail);
+    setIsReplacePanelOpen(true);
+  };
+
+  const handleCloseReplacePanel = () => {
+    setIsReplacePanelOpen(false);
+  };
+
+  const handleReplaced = () => {
+    setIsReplacePanelOpen(false);
+    loadDocuments(pageNumber);
+  };
+
   // Clear the active category filter on a successful create/update so the
   // mutated document is guaranteed visible — otherwise a stale filter can
   // hide a just-created doc, or leave an edited doc's old category with no
   // matching documents (a misleading "empty" table).
   const handleFormSaved = () => {
-    loadDocuments();
+    setPageNumber(1);
+    loadDocuments(1);
     loadCategories();
     setActiveCategory(null);
   };
@@ -231,11 +286,20 @@ export function DocumentLibrary({
       )}
 
       {activeTab === "all" ? (
-        <DocumentTable
-          documents={filteredDocuments}
-          onOpenDocument={handleOpenDocument}
-          canManage={canManage}
-        />
+        <>
+          <DocumentTable
+            documents={filteredDocuments}
+            onOpenDocument={handleOpenDocument}
+            canManage={canManage}
+          />
+          <Pagination
+            pageNumber={pageNumber}
+            totalPages={pagination.totalPages}
+            hasPrevious={pagination.hasPrevious}
+            hasNext={pagination.hasNext}
+            onPageChange={setPageNumber}
+          />
+        </>
       ) : (
         <NeedsAttentionList
           items={knowledgeGaps}
@@ -251,6 +315,7 @@ export function DocumentLibrary({
         canManage={canManage}
         onClose={handleCloseDetail}
         onEditDetails={handleEditDetails}
+        onReplaceFile={handleReplaceFile}
       />
 
       <DocumentFormPanel
@@ -260,6 +325,14 @@ export function DocumentLibrary({
         categories={categories}
         onClose={handleCloseFormPanel}
         onSaved={handleFormSaved}
+      />
+
+      <ReplaceFilePanel
+        isOpen={isReplacePanelOpen}
+        document={replaceDocument}
+        spacePublicId={spacePublicId}
+        onClose={handleCloseReplacePanel}
+        onReplaced={handleReplaced}
       />
 
       <ResolveQuestionPanel

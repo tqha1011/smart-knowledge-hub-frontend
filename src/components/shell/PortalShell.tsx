@@ -86,6 +86,14 @@ export function PortalShell() {
     [],
   );
 
+  // Bumped whenever the Assistant answers a question — a citation can
+  // change a document's `cited` count, so DocumentLibrary refetches its
+  // current page in response instead of only on mount/page-change/save.
+  const [documentsRefreshTick, setDocumentsRefreshTick] = useState(0);
+  const handleAssistantAnswered = () => {
+    setDocumentsRefreshTick((tick) => tick + 1);
+  };
+
   // Reusable for the post-resolve refetch (called from an event handler,
   // not an effect) — the mount fetch below is written inline instead of
   // calling this, since calling a setState-bearing function from inside an
@@ -212,6 +220,7 @@ export function PortalShell() {
                   onTabChange={handleLibraryTabChange}
                   knowledgeGaps={knowledgeGaps}
                   onGapsChanged={loadKnowledgeGaps}
+                  refreshSignal={documentsRefreshTick}
                 />
               )}
               {activeNavKey === "users-roles" && (
@@ -250,6 +259,7 @@ export function PortalShell() {
           selectedSpaceId={selectedSpace.id}
           selectedSpaceName={selectedSpace.name}
           onLogKnowledgeGap={handleLogKnowledgeGap}
+          onAnswered={handleAssistantAnswered}
         />
       </div>
     </PageTransition>

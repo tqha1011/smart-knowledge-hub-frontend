@@ -14,11 +14,11 @@ import { SetPasswordPage } from "./pages/setPasswordPage";
 import { SpacesOverviewPage } from "./pages/spacesOverviewPage";
 import { PortalShell } from "./components/shell/PortalShell";
 import { RequireAuth } from "./components/common/RequireAuth";
+import { getAccessToken } from "./shared/authSession";
 
-// MOCK: gates the "/" redirect on the same accessToken presence RequireAuth
-// checks — no real session check without a backend.
+// Gates the "/" redirect on the same access-token presence RequireAuth checks.
 function RootRedirect() {
-  const hasSession = Boolean(localStorage.getItem("accessToken"));
+  const hasSession = Boolean(getAccessToken());
   return <Navigate to={hasSession ? "/spaces" : "/login"} replace />;
 }
 
