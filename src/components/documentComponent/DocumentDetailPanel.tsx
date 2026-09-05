@@ -103,7 +103,7 @@ function DocumentDetailPanelBody({
     const newTab = window.open("", "_blank");
     if (newTab) newTab.opener = null;
     documentService
-      .getDownloadUrl(documentPublicId, space.id)
+      .getDownloadUrl(documentPublicId, space.id, "inline")
       .then((url) => {
         if (newTab) {
           newTab.location.href = url;

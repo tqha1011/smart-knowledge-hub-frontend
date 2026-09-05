@@ -87,6 +87,8 @@ export interface DocumentDownloadUrlResponse {
   downloadUrl: string;
 }
 
+export type DocumentDownloadDisposition = "inline" | "attachment";
+
 export interface DocumentCreateRequest {
   name: string;
   description: string | null;
