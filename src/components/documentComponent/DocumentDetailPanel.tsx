@@ -99,16 +99,22 @@ function DocumentDetailPanelBody({
     };
   }, [documentPublicId, space.id]);
 
-  const handleOpenFile = async () => {
-    try {
-      const url = await documentService.getDownloadUrl(
-        documentPublicId,
-        space.id,
-      );
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
+  const handleOpenFile = () => {
+    const newTab = window.open("", "_blank");
+    if (newTab) newTab.opener = null;
+    documentService
+      .getDownloadUrl(documentPublicId, space.id)
+      .then((url) => {
+        if (newTab) {
+          newTab.location.href = url;
+        } else {
+          toast.error("Popup blocked. Allow popups for this site to download.");
+        }
+      })
+      .catch((error) => {
+        newTab?.close();
+        toast.error(toErrorMessage(error as ApiErrorResponse));
+      });
   };
 
   const handleReplaceFile = () => {

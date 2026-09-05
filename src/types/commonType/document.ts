@@ -83,6 +83,10 @@ export interface DocumentUploadUrlRequest {
   fileSize: number;
 }
 
+export interface DocumentDownloadUrlResponse {
+  downloadUrl: string;
+}
+
 export interface DocumentCreateRequest {
   name: string;
   description: string | null;
