@@ -8,6 +8,7 @@ import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
 import { ResolveQuestionPanel } from "./ResolveQuestionPanel";
+import { Pagination } from "../common/Pagination";
 import { documentService } from "../../services/documentService";
 import { categoryService } from "../../services/categoryService";
 import { toErrorMessage } from "../../shared/handleApiError";
@@ -51,6 +52,12 @@ export function DocumentLibrary({
   const spacePublicId = space.id;
 
   const [documents, setDocuments] = useState<DocumentListItemDto[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    hasPrevious: false,
+    hasNext: false,
+  });
   const [categories, setCategories] = useState<CategoryDto[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -71,15 +78,25 @@ export function DocumentLibrary({
   // an effect) — the mount fetch below is written inline instead of
   // calling these, since calling a setState-bearing function from inside
   // an effect body trips react-hooks/set-state-in-effect.
-  const loadDocuments = useCallback(async () => {
-    try {
-      const response =
-        await documentService.getListDocumentsForUser(spacePublicId);
-      setDocuments(response.items);
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, [spacePublicId]);
+  const loadDocuments = useCallback(
+    async (page: number) => {
+      try {
+        const response = await documentService.getListDocumentsForUser(
+          spacePublicId,
+          page,
+        );
+        setDocuments(response.items);
+        setPagination({
+          totalPages: response.totalPages,
+          hasPrevious: response.hasPrevious,
+          hasNext: response.hasNext,
+        });
+      } catch (error) {
+        toast.error(toErrorMessage(error as ApiErrorResponse));
+      }
+    },
+    [spacePublicId],
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -93,13 +110,27 @@ export function DocumentLibrary({
   useEffect(() => {
     let isActive = true;
     documentService
-      .getListDocumentsForUser(spacePublicId)
+      .getListDocumentsForUser(spacePublicId, pageNumber)
       .then((response) => {
-        if (isActive) setDocuments(response.items);
+        if (isActive) {
+          setDocuments(response.items);
+          setPagination({
+            totalPages: response.totalPages,
+            hasPrevious: response.hasPrevious,
+            hasNext: response.hasNext,
+          });
+        }
       })
       .catch((error: ApiErrorResponse) => {
         if (isActive) toast.error(toErrorMessage(error));
       });
+    return () => {
+      isActive = false;
+    };
+  }, [spacePublicId, pageNumber]);
+
+  useEffect(() => {
+    let isActive = true;
     categoryService
       .getListCategory(spacePublicId)
       .then((response) => {
@@ -149,7 +180,8 @@ export function DocumentLibrary({
   // hide a just-created doc, or leave an edited doc's old category with no
   // matching documents (a misleading "empty" table).
   const handleFormSaved = () => {
-    loadDocuments();
+    setPageNumber(1);
+    loadDocuments(1);
     loadCategories();
     setActiveCategory(null);
   };
@@ -231,11 +263,20 @@ export function DocumentLibrary({
       )}
 
       {activeTab === "all" ? (
-        <DocumentTable
-          documents={filteredDocuments}
-          onOpenDocument={handleOpenDocument}
-          canManage={canManage}
-        />
+        <>
+          <DocumentTable
+            documents={filteredDocuments}
+            onOpenDocument={handleOpenDocument}
+            canManage={canManage}
+          />
+          <Pagination
+            pageNumber={pageNumber}
+            totalPages={pagination.totalPages}
+            hasPrevious={pagination.hasPrevious}
+            hasNext={pagination.hasNext}
+            onPageChange={setPageNumber}
+          />
+        </>
       ) : (
         <NeedsAttentionList
           items={knowledgeGaps}

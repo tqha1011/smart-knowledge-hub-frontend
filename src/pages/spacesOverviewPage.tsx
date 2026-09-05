@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
+import { Pagination } from "../components/common/Pagination";
 import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
 import { spaceColorPalette } from "../components/shell/shellMockData";
 import { authService } from "../services/authService";
@@ -24,12 +25,23 @@ export function SpacesOverviewPage() {
   // null = still loading.
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [spaces, setSpaces] = useState<SpaceListItemDto[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    hasPrevious: false,
+    hasNext: false,
+  });
   const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
 
-  const loadSpaces = useCallback(async () => {
+  const loadSpaces = useCallback(async (page: number) => {
     try {
-      const response = await knowledgeSpaceService.getUserSpaces();
+      const response = await knowledgeSpaceService.getUserSpaces(page);
       setSpaces(response.items);
+      setPagination({
+        totalPages: response.totalPages,
+        hasPrevious: response.hasPrevious,
+        hasNext: response.hasNext,
+      });
     } catch (error) {
       toast.error(toErrorMessage(error as ApiErrorResponse));
     }
@@ -53,9 +65,16 @@ export function SpacesOverviewPage() {
   useEffect(() => {
     let isActive = true;
     knowledgeSpaceService
-      .getUserSpaces()
+      .getUserSpaces(pageNumber)
       .then((response) => {
-        if (isActive) setSpaces(response.items);
+        if (isActive) {
+          setSpaces(response.items);
+          setPagination({
+            totalPages: response.totalPages,
+            hasPrevious: response.hasPrevious,
+            hasNext: response.hasNext,
+          });
+        }
       })
       .catch((error: ApiErrorResponse) => {
         if (isActive) toast.error(toErrorMessage(error));
@@ -63,7 +82,7 @@ export function SpacesOverviewPage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [pageNumber]);
 
   const handleLogout = async () => {
     const refreshToken = getRefreshToken();
@@ -194,13 +213,24 @@ export function SpacesOverviewPage() {
               );
             })}
           </div>
+
+          <Pagination
+            pageNumber={pageNumber}
+            totalPages={pagination.totalPages}
+            hasPrevious={pagination.hasPrevious}
+            hasNext={pagination.hasNext}
+            onPageChange={setPageNumber}
+          />
         </main>
       </div>
 
       <CreateSpacePanel
         isOpen={isCreateSpaceOpen}
         onClose={() => setIsCreateSpaceOpen(false)}
-        onCreated={loadSpaces}
+        onCreated={() => {
+          setPageNumber(1);
+          loadSpaces(1);
+        }}
       />
     </PageTransition>
   );

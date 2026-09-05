@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { UsersTable } from "./UsersTable";
 import { UserDetailPanel } from "./UserDetailPanel";
 import { AddMemberPanel } from "./AddMemberPanel";
+import { Pagination } from "../common/Pagination";
 import { knowledgeSpaceService } from "../../services/spaceService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type { Space, UserDataSpaceDto } from "../../types";
@@ -22,27 +23,51 @@ export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
   const spacePublicId = space.id;
 
   const [members, setMembers] = useState<UserDataSpaceDto[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pagination, setPagination] = useState({
+    totalPages: 1,
+    hasPrevious: false,
+    hasNext: false,
+  });
   const [selectedMember, setSelectedMember] = useState<UserDataSpaceDto | null>(
     null,
   );
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
   const [isAddPanelOpen, setIsAddPanelOpen] = useState(false);
 
-  const loadMembers = useCallback(async () => {
-    try {
-      const response = await knowledgeSpaceService.getListUser(spacePublicId);
-      setMembers(response.items);
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, [spacePublicId]);
+  const loadMembers = useCallback(
+    async (page: number) => {
+      try {
+        const response = await knowledgeSpaceService.getListUser(
+          spacePublicId,
+          page,
+        );
+        setMembers(response.items);
+        setPagination({
+          totalPages: response.totalPages,
+          hasPrevious: response.hasPrevious,
+          hasNext: response.hasNext,
+        });
+      } catch (error) {
+        toast.error(toErrorMessage(error as ApiErrorResponse));
+      }
+    },
+    [spacePublicId],
+  );
 
   useEffect(() => {
     let isActive = true;
     knowledgeSpaceService
-      .getListUser(spacePublicId)
+      .getListUser(spacePublicId, pageNumber)
       .then((response) => {
-        if (isActive) setMembers(response.items);
+        if (isActive) {
+          setMembers(response.items);
+          setPagination({
+            totalPages: response.totalPages,
+            hasPrevious: response.hasPrevious,
+            hasNext: response.hasNext,
+          });
+        }
       })
       .catch((error: ApiErrorResponse) => {
         if (isActive) toast.error(toErrorMessage(error));
@@ -50,7 +75,7 @@ export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
     return () => {
       isActive = false;
     };
-  }, [spacePublicId]);
+  }, [spacePublicId, pageNumber]);
 
   const handleOpenMember = (member: UserDataSpaceDto) => {
     setSelectedMember(member);
@@ -63,17 +88,19 @@ export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
 
   const handleRoleChanged = () => {
     setIsDetailPanelOpen(false);
-    loadMembers();
+    loadMembers(pageNumber);
   };
 
   const handleRemoved = () => {
     setIsDetailPanelOpen(false);
-    loadMembers();
+    setPageNumber(1);
+    loadMembers(1);
   };
 
   const handleAdded = () => {
     setIsAddPanelOpen(false);
-    loadMembers();
+    setPageNumber(1);
+    loadMembers(1);
   };
 
   return (
@@ -104,6 +131,14 @@ export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
         members={members}
         onOpenMember={handleOpenMember}
         canManage={canManage}
+      />
+
+      <Pagination
+        pageNumber={pageNumber}
+        totalPages={pagination.totalPages}
+        hasPrevious={pagination.hasPrevious}
+        hasNext={pagination.hasNext}
+        onPageChange={setPageNumber}
       />
 
       <UserDetailPanel
