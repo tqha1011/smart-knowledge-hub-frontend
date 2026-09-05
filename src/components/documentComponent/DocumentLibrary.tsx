@@ -32,6 +32,8 @@ interface DocumentLibraryProps {
   knowledgeGaps: UnansweredQuestionData[];
   /** Called after a question is resolved so the parent can refetch the queue (it also owns the sidebar/rail badge counts). */
   onGapsChanged: () => void;
+  /** Bumped by the parent after the Assistant answers a question — triggers a refetch of the current page so a newly-cited document's count stays fresh. */
+  refreshSignal: number;
 }
 
 // Page structure per spec: title + subtitle + Upload button, tabs, category
@@ -48,6 +50,7 @@ export function DocumentLibrary({
   onTabChange,
   knowledgeGaps,
   onGapsChanged,
+  refreshSignal,
 }: DocumentLibraryProps) {
   const spacePublicId = space.id;
 
@@ -127,7 +130,7 @@ export function DocumentLibrary({
     return () => {
       isActive = false;
     };
-  }, [spacePublicId, pageNumber]);
+  }, [spacePublicId, pageNumber, refreshSignal]);
 
   useEffect(() => {
     let isActive = true;

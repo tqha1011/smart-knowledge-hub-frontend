@@ -21,6 +21,8 @@ interface AskAiPanelProps {
   selectedSpaceId: string;
   selectedSpaceName: string;
   onLogKnowledgeGap: (question: string) => void;
+  /** Called after the assistant successfully answers — a citation can change a document's cited count, so the caller can refetch the document list. */
+  onAnswered: () => void;
 }
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -95,6 +97,7 @@ export function AskAiPanel({
   selectedSpaceId,
   selectedSpaceName,
   onLogKnowledgeGap,
+  onAnswered,
 }: AskAiPanelProps) {
   const [viewMode, setViewMode] = useState<"conversation" | "list">(
     "conversation",
@@ -231,6 +234,7 @@ export function AskAiPanel({
       // message, only surface its own error.
       try {
         setMessages((prev) => [...prev, toAssistantMessage(response)]);
+        onAnswered();
 
         if ((response.sources ?? []).length === 0) {
           onLogKnowledgeGap(question);
