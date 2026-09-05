@@ -127,6 +127,15 @@ export const authService = {
       throw handleApiError(error);
     }
   },
+
+  setPassword: async (data: SetPasswordDto) => {
+    try {
+      const response = await api.patch<MessageResult>("/auth/password", data);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
 
 // MOCK: stands in for `GET /invites/:token` — not part of the auth API
