@@ -162,4 +162,19 @@ export const documentService = {
       throw handleApiError(error);
     }
   },
+
+  retryIngestionDocument: async (
+    spacePublicId: string,
+    documentPublicId: string,
+  ) => {
+    try {
+      const response = await api.post(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/retry`,
+        null,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };
