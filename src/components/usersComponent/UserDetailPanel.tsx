@@ -189,7 +189,7 @@ function UserDetailPanelBody({
                 onChange={(event) =>
                   setNewRole(event.target.value as SpaceRole)
                 }
-                className="border-border text-ink focus:border-accent flex-1 rounded-md border px-3 py-2 text-sm outline-none"
+                className="border-border bg-surface-sunken text-ink focus:border-accent flex-1 rounded-md border px-3 py-2 text-sm outline-none"
               >
                 <option value="" disabled>
                   Select a role…
