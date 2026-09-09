@@ -170,7 +170,7 @@ export const documentService = {
     try {
       const response = await api.post(
         `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/retry`,
-        null,
+        {},
       );
       return response.data;
     } catch (error) {
