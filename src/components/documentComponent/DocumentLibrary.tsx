@@ -198,6 +198,12 @@ export function DocumentLibrary({
     loadDocuments(pageNumber);
   };
 
+  // Panel stays open on retry (unlike replace/edit) so the user can watch
+  // the status badge move from Failed to Processing without losing place.
+  const handleRetried = () => {
+    loadDocuments(pageNumber);
+  };
+
   // Clear the active category filter on a successful create/update so the
   // mutated document is guaranteed visible — otherwise a stale filter can
   // hide a just-created doc, or leave an edited doc's old category with no
@@ -316,6 +322,7 @@ export function DocumentLibrary({
         onClose={handleCloseDetail}
         onEditDetails={handleEditDetails}
         onReplaceFile={handleReplaceFile}
+        onRetried={handleRetried}
       />
 
       <DocumentFormPanel
