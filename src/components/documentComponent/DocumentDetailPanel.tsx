@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Download, Lock, Pencil, RefreshCw, Trash2, X } from "lucide-react";
+import {
+  Download,
+  Lock,
+  Pencil,
+  RefreshCw,
+  RotateCw,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import type { DocumentDetailsDto, Space } from "../../types";
 import {
@@ -26,6 +34,8 @@ interface DocumentDetailPanelProps {
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
   onReplaceFile: (document: DocumentDetailsDto) => void;
+  /** Called after a retry request succeeds so the parent can refetch the list (row status moves out of Failed). */
+  onRetried: () => void;
 }
 
 // Floating slide-over panel (420px, right-aligned), same pattern as
@@ -40,6 +50,7 @@ export function DocumentDetailPanel({
   onClose,
   onEditDetails,
   onReplaceFile,
+  onRetried,
 }: DocumentDetailPanelProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -53,6 +64,7 @@ export function DocumentDetailPanel({
           onClose={onClose}
           onEditDetails={onEditDetails}
           onReplaceFile={onReplaceFile}
+          onRetried={onRetried}
           prefersReducedMotion={prefersReducedMotion}
         />
       )}
@@ -67,6 +79,7 @@ interface DocumentDetailPanelBodyProps {
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
   onReplaceFile: (document: DocumentDetailsDto) => void;
+  onRetried: () => void;
   prefersReducedMotion: boolean | null;
 }
 
@@ -81,11 +94,13 @@ function DocumentDetailPanelBody({
   onClose,
   onEditDetails,
   onReplaceFile,
+  onRetried,
   prefersReducedMotion,
 }: DocumentDetailPanelBodyProps) {
   const [document, setDocument] = useState<DocumentDetailsDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const panelRef = usePanelDismiss(true, onClose);
 
   useEffect(() => {
@@ -127,6 +142,24 @@ function DocumentDetailPanelBody({
   const handleDelete = () => {
     toast.info("Deleting documents isn't available yet.");
     setIsConfirmingDelete(false);
+  };
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      await documentService.retryIngestionDocument(space.id, documentPublicId);
+      toast.success("Retry started. Reprocessing this document.");
+      const detail = await documentService.getDocumentDetails(
+        documentPublicId,
+        space.id,
+      );
+      setDocument(detail);
+      onRetried();
+    } catch (error) {
+      toast.error(toErrorMessage(error as ApiErrorResponse));
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   if (isLoading || !document) {
@@ -301,6 +334,20 @@ function DocumentDetailPanelBody({
             <Download size={15} />
             Open / Download
           </button>
+          {canManage && document.status === "Failed" && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={isRetrying}
+              className="bg-warn-bg text-warn-fg flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
+            >
+              <RotateCw
+                size={14}
+                className={isRetrying ? "animate-spin" : undefined}
+              />
+              {isRetrying ? "Retrying…" : "Retry processing"}
+            </button>
+          )}
           {canManage && (
             <>
               <div className="grid grid-cols-2 gap-2">
