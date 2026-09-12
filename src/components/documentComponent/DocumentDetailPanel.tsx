@@ -36,6 +36,8 @@ interface DocumentDetailPanelProps {
   onReplaceFile: (document: DocumentDetailsDto) => void;
   /** Called after a retry request succeeds so the parent can refetch the list (row status moves out of Failed). */
   onRetried: () => void;
+  /** Bumped by the parent on a realtime status update for this document, so an already-open panel picks up the new status without the user closing/reopening it. */
+  refreshSignal?: number;
 }
 
 // Floating slide-over panel (420px, right-aligned), same pattern as
@@ -51,6 +53,7 @@ export function DocumentDetailPanel({
   onEditDetails,
   onReplaceFile,
   onRetried,
+  refreshSignal,
 }: DocumentDetailPanelProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -65,6 +68,7 @@ export function DocumentDetailPanel({
           onEditDetails={onEditDetails}
           onReplaceFile={onReplaceFile}
           onRetried={onRetried}
+          refreshSignal={refreshSignal}
           prefersReducedMotion={prefersReducedMotion}
         />
       )}
@@ -80,6 +84,7 @@ interface DocumentDetailPanelBodyProps {
   onEditDetails: (document: DocumentDetailsDto) => void;
   onReplaceFile: (document: DocumentDetailsDto) => void;
   onRetried: () => void;
+  refreshSignal?: number;
   prefersReducedMotion: boolean | null;
 }
 
@@ -95,6 +100,7 @@ function DocumentDetailPanelBody({
   onEditDetails,
   onReplaceFile,
   onRetried,
+  refreshSignal,
   prefersReducedMotion,
 }: DocumentDetailPanelBodyProps) {
   const [document, setDocument] = useState<DocumentDetailsDto | null>(null);
@@ -119,7 +125,7 @@ function DocumentDetailPanelBody({
     return () => {
       cancelled = true;
     };
-  }, [documentPublicId, space.id]);
+  }, [documentPublicId, space.id, refreshSignal]);
 
   const handleOpenFile = () => {
     const newTab = window.open("", "_blank");

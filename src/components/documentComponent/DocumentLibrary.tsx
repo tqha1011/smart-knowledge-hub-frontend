@@ -10,6 +10,7 @@ import { DocumentFormPanel } from "./DocumentFormPanel";
 import { ReplaceFilePanel } from "./ReplaceFilePanel";
 import { ResolveQuestionPanel } from "./ResolveQuestionPanel";
 import { Pagination } from "../common/Pagination";
+import { useDocumentStatusUpdates } from "../common/useDocumentStatusUpdates";
 import { documentService } from "../../services/documentService";
 import { categoryService } from "../../services/categoryService";
 import { toErrorMessage } from "../../shared/handleApiError";
@@ -17,6 +18,7 @@ import type {
   CategoryDto,
   DocumentDetailsDto,
   DocumentListItemDto,
+  DocumentStatusUpdatedPayload,
   Space,
   UnansweredQuestionData,
 } from "../../types";
@@ -69,6 +71,9 @@ export function DocumentLibrary({
     null,
   );
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
+  // Bumped on a realtime status update for the currently-open document, so
+  // DocumentDetailPanel refetches instead of showing a stale status badge.
+  const [detailRefreshSignal, setDetailRefreshSignal] = useState(0);
 
   const [isFormPanelOpen, setIsFormPanelOpen] = useState(false);
   const [formPanelDocument, setFormPanelDocument] =
@@ -114,6 +119,27 @@ export function DocumentLibrary({
       toast.error(toErrorMessage(error as ApiErrorResponse));
     }
   }, [spacePublicId]);
+
+  // Ignores events for other Spaces — the socket also delivers updates for
+  // every other Space the user belongs to, not just the one open here.
+  const handleDocumentStatusUpdate = useCallback(
+    (payload: DocumentStatusUpdatedPayload) => {
+      if (payload.knowledgeSpacePublicId !== spacePublicId) return;
+
+      if (payload.status === "Ready") {
+        toast.success(`"${payload.fileName}" is ready.`);
+      } else {
+        toast.error(`"${payload.fileName}" failed to process.`);
+      }
+
+      loadDocuments(pageNumber);
+      if (payload.documentPublicId === selectedDocumentId) {
+        setDetailRefreshSignal((signal) => signal + 1);
+      }
+    },
+    [spacePublicId, pageNumber, selectedDocumentId, loadDocuments],
+  );
+  useDocumentStatusUpdates(handleDocumentStatusUpdate);
 
   useEffect(() => {
     let isActive = true;
@@ -323,6 +349,7 @@ export function DocumentLibrary({
         onEditDetails={handleEditDetails}
         onReplaceFile={handleReplaceFile}
         onRetried={handleRetried}
+        refreshSignal={detailRefreshSignal}
       />
 
       <DocumentFormPanel

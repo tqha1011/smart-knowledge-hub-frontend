@@ -8,6 +8,7 @@ import { Pagination } from "../components/common/Pagination";
 import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
 import { spaceColorPalette } from "../components/shell/shellMockData";
 import { authService } from "../services/authService";
+import { disconnectRealtime } from "../services/realtimeService";
 import { knowledgeSpaceService } from "../services/spaceService";
 import { toCurrentUser, userService } from "../services/userService";
 import { clearSession, getRefreshToken } from "../shared/authSession";
@@ -91,6 +92,7 @@ export function SpacesOverviewPage() {
     } catch {
       // best-effort — still clear the local session even if this fails
     } finally {
+      disconnectRealtime();
       clearSession();
       navigate("/login", { replace: true });
     }

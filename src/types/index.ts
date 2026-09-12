@@ -50,6 +50,7 @@ export type {
   ChatMessageRequestDto,
   ChatMessageResponseDto,
 } from "./commonType/chat";
+export type { DocumentStatusUpdatedPayload } from "./commonType/realtime";
 export type {
   LoginDto,
   SetPasswordDto,

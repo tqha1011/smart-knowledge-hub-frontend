@@ -7,6 +7,7 @@ import { AuthCard } from "../components/authComponent/AuthCard";
 import { CustomInput } from "../components/authComponent/CustomInput";
 import { PageTransition } from "../components/common/PageTransition";
 import { authService } from "../services/authService";
+import { connectRealtime } from "../services/realtimeService";
 import { setSession } from "../shared/authSession";
 
 // `/login` — returning users only. No self-registration: accounts are
@@ -36,6 +37,7 @@ export function LoginPage() {
         rememberMe: keepSignedIn,
       });
       setSession(accessToken, refreshToken);
+      connectRealtime();
       toast.success("Signed in successfully.");
       navigate("/spaces", { replace: true });
     } catch {
