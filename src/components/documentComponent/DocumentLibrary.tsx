@@ -1,7 +1,12 @@
-// src/components/documentComponent/DocumentLibrary.tsx
-import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
 import { toast } from "react-toastify";
+import { motion, useReducedMotion } from "framer-motion";
+import { fadeMotion, indicatorTransition } from "../../shared/motion";
+import { useResource } from "../common/useResource";
+import { ResourceState, LoadError } from "../common/ResourceState";
+import { Button } from "../common/Button";
+// src/components/documentComponent/DocumentLibrary.tsx
+import { useCallback, useState } from "react";
+import { Plus } from "lucide-react";
 import { CategoryFilterChips } from "./CategoryFilterChips";
 import { DocumentTable } from "./DocumentTable";
 import { NeedsAttentionList } from "./NeedsAttentionList";
@@ -13,16 +18,13 @@ import { Pagination } from "../common/Pagination";
 import { useDocumentStatusUpdates } from "../common/useDocumentStatusUpdates";
 import { documentService } from "../../services/documentService";
 import { categoryService } from "../../services/categoryService";
-import { toErrorMessage } from "../../shared/handleApiError";
 import type {
-  CategoryDto,
   DocumentDetailsDto,
   DocumentListItemDto,
   DocumentStatusUpdatedPayload,
   Space,
   UnansweredQuestionData,
 } from "../../types";
-import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 export type DocumentLibraryTab = "all" | "needs-attention";
 
@@ -30,9 +32,15 @@ interface DocumentLibraryProps {
   space: Space;
   /** isAdmin || Editor-in-this-Space — gates Upload, row actions, gap actions. */
   canManage: boolean;
+  searchQuery: string;
+  searchRevision: number;
+  onClearSearch: () => void;
   activeTab: DocumentLibraryTab;
   onTabChange: (tab: DocumentLibraryTab) => void;
   knowledgeGaps: UnansweredQuestionData[];
+  knowledgeGapsLoading: boolean;
+  knowledgeGapsError: string | null;
+  knowledgeGapsLoaded: boolean;
   /** Called after a question is resolved so the parent can refetch the queue (it also owns the sidebar/rail badge counts). */
   onGapsChanged: () => void;
   /** Bumped by the parent after the Assistant answers a question — triggers a refetch of the current page so a newly-cited document's count stays fresh. */
@@ -49,22 +57,67 @@ interface DocumentLibraryProps {
 export function DocumentLibrary({
   space,
   canManage,
+  searchQuery,
+  searchRevision,
+  onClearSearch,
   activeTab,
   onTabChange,
   knowledgeGaps,
+  knowledgeGapsLoading,
+  knowledgeGapsError,
+  knowledgeGapsLoaded,
   onGapsChanged,
   refreshSignal,
 }: DocumentLibraryProps) {
   const spacePublicId = space.id;
 
-  const [documents, setDocuments] = useState<DocumentListItemDto[]>([]);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pagination, setPagination] = useState({
+  const reduced = useReducedMotion();
+  // A new search (including resubmitting it) starts at page one immediately.
+  // Keep pagination keyed to the search instead of briefly fetching its old page.
+  const listKey = JSON.stringify([spacePublicId, searchQuery, searchRevision]);
+  const [pageState, setPageState] = useState({ key: listKey, page: 1 });
+  const pageNumber = pageState.key === listKey ? pageState.page : 1;
+  const setPageNumber = (page: number) => setPageState({ key: listKey, page });
+  const documentsLoader = useCallback(
+    async () =>
+      searchQuery
+        ? documentService.searchDocumentsForUser(
+            spacePublicId,
+            searchQuery,
+            pageNumber,
+          )
+        : documentService.getListDocumentsForUser(spacePublicId, pageNumber),
+    [spacePublicId, pageNumber, searchQuery],
+  );
+  const documentsResource = useResource(
+    `documents:${listKey}:${pageNumber}`,
+    documentsLoader,
+    refreshSignal,
+  );
+  const documents = documentsResource.data?.items ?? [];
+  const pagination = documentsResource.data ?? {
     totalPages: 1,
     hasPrevious: false,
     hasNext: false,
-  });
-  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  };
+  const categoriesLoader = useCallback(
+    () => categoryService.getListCategory(spacePublicId),
+    [spacePublicId],
+  );
+  const categoriesResource = useResource(
+    `categories:${spacePublicId}`,
+    categoriesLoader,
+  );
+  const categories = categoriesResource.data ?? [];
+  const loadCategories = categoriesResource.reload;
+  const reloadDocuments = documentsResource.reload;
+  const loadDocuments = useCallback(
+    (page: number) => {
+      if (page !== pageNumber) setPageState({ key: listKey, page });
+      else void reloadDocuments();
+    },
+    [listKey, pageNumber, reloadDocuments],
+  );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
@@ -87,39 +140,6 @@ export function DocumentLibrary({
   const [questionToResolve, setQuestionToResolve] =
     useState<UnansweredQuestionData | null>(null);
 
-  // Reusable for the post-save refetch (called from an event handler, not
-  // an effect) — the mount fetch below is written inline instead of
-  // calling these, since calling a setState-bearing function from inside
-  // an effect body trips react-hooks/set-state-in-effect.
-  const loadDocuments = useCallback(
-    async (page: number) => {
-      try {
-        const response = await documentService.getListDocumentsForUser(
-          spacePublicId,
-          page,
-        );
-        setDocuments(response.items);
-        setPagination({
-          totalPages: response.totalPages,
-          hasPrevious: response.hasPrevious,
-          hasNext: response.hasNext,
-        });
-      } catch (error) {
-        toast.error(toErrorMessage(error as ApiErrorResponse));
-      }
-    },
-    [spacePublicId],
-  );
-
-  const loadCategories = useCallback(async () => {
-    try {
-      const response = await categoryService.getListCategory(spacePublicId);
-      setCategories(response);
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, [spacePublicId]);
-
   // Ignores events for other Spaces — the socket also delivers updates for
   // every other Space the user belongs to, not just the one open here.
   const handleDocumentStatusUpdate = useCallback(
@@ -140,43 +160,6 @@ export function DocumentLibrary({
     [spacePublicId, pageNumber, selectedDocumentId, loadDocuments],
   );
   useDocumentStatusUpdates(handleDocumentStatusUpdate);
-
-  useEffect(() => {
-    let isActive = true;
-    documentService
-      .getListDocumentsForUser(spacePublicId, pageNumber)
-      .then((response) => {
-        if (isActive) {
-          setDocuments(response.items);
-          setPagination({
-            totalPages: response.totalPages,
-            hasPrevious: response.hasPrevious,
-            hasNext: response.hasNext,
-          });
-        }
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [spacePublicId, pageNumber, refreshSignal]);
-
-  useEffect(() => {
-    let isActive = true;
-    categoryService
-      .getListCategory(spacePublicId)
-      .then((response) => {
-        if (isActive) setCategories(response);
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [spacePublicId]);
 
   const categoryNames = Array.from(
     new Set(categories.map((category) => category.name)),
@@ -258,29 +241,34 @@ export function DocumentLibrary({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="max-w-full min-w-0 break-words">
           <h1 className="font-display text-ink text-3xl font-semibold">
             Documents
           </h1>
           <p className="text-ink-muted mt-1 text-sm">
-            {space.name} · {documents.length} document
-            {documents.length === 1 ? "" : "s"} · {knowledgeGaps.length} need
-            attention
+            {space.name}
+            {documentsResource.data &&
+              ` · ${documents.length} documents on this page`}
+            {knowledgeGapsLoaded && ` · ${knowledgeGaps.length} need attention`}
           </p>
         </div>
         {canManage && (
-          <button
+          <Button
             type="button"
             onClick={handleOpenUploadPanel}
-            className="bg-accent flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white"
+            className="bg-accent text-on-accent flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
           >
             <Plus size={16} />
             Upload document
-          </button>
+          </Button>
         )}
       </div>
 
-      <div className="border-border mb-4 flex gap-1 border-b">
+      <div
+        role="tablist"
+        aria-label="Document views"
+        className="border-border mb-4 flex gap-1 border-b"
+      >
         {(
           [
             { key: "all", label: "All documents" },
@@ -291,15 +279,47 @@ export function DocumentLibrary({
             key={key}
             type="button"
             onClick={() => onTabChange(key)}
-            className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-semibold ${
+            role="tab"
+            id={`library-tab-${key}`}
+            aria-controls={`library-view-${key}`}
+            aria-selected={activeTab === key}
+            tabIndex={activeTab === key ? 0 : -1}
+            onKeyDown={(event) => {
+              if (
+                !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              const next =
+                event.key === "Home"
+                  ? "all"
+                  : event.key === "End"
+                    ? "needs-attention"
+                    : key === "all"
+                      ? "needs-attention"
+                      : "all";
+              onTabChange(next);
+              event.currentTarget.parentElement
+                ?.querySelector<HTMLButtonElement>(`#library-tab-${next}`)
+                ?.focus();
+            }}
+            className={`relative flex items-center gap-1.5 px-3 py-3 text-sm font-semibold ${
               activeTab === key
-                ? "border-accent text-accent"
-                : "text-ink-muted hover:text-ink border-transparent"
+                ? "text-accent"
+                : "text-ink-muted hover:text-ink"
             }`}
           >
+            {activeTab === key && (
+              <motion.span
+                aria-hidden="true"
+                layoutId={reduced ? undefined : "library-tab-indicator"}
+                transition={indicatorTransition(reduced)}
+                className="bg-accent absolute inset-x-0 bottom-0 h-0.5"
+              />
+            )}
             {label}
             {key === "needs-attention" && knowledgeGaps.length > 0 && (
-              <span className="bg-warn-bg text-warn-fg rounded-full px-1.5 py-0.5 font-mono text-[11px] font-medium">
+              <span className="bg-warn-bg text-warn-fg rounded-full px-1.5 py-0.5 text-xs font-medium">
                 {knowledgeGaps.length}
               </span>
             )}
@@ -307,38 +327,98 @@ export function DocumentLibrary({
         ))}
       </div>
 
-      {activeTab === "all" && categoryNames.length > 0 && (
-        <div className="mb-4">
-          <CategoryFilterChips
-            categories={categoryNames}
-            activeCategory={activeCategory}
-            onSelect={setActiveCategory}
-          />
-        </div>
-      )}
+      <motion.div
+        key={activeTab}
+        {...fadeMotion(reduced)}
+        role="tabpanel"
+        id={`library-view-${activeTab}`}
+        aria-labelledby={`library-tab-${activeTab}`}
+      >
+        {activeTab === "all" && searchQuery && (
+          <p role="status" className="text-ink-muted mb-4 text-sm break-words">
+            Results for{" "}
+            <span className="text-ink font-semibold">“{searchQuery}”</span>
+          </p>
+        )}
+        {activeTab === "all" && categoriesResource.error && (
+          <div className="mb-4">
+            <LoadError
+              message={categoriesResource.error}
+              onRetry={loadCategories}
+              isLoading={categoriesResource.isLoading}
+            />
+          </div>
+        )}
+        {activeTab === "all" && categoryNames.length > 0 && (
+          <div className="mb-4">
+            <CategoryFilterChips
+              categories={categoryNames}
+              activeCategory={activeCategory}
+              onSelect={setActiveCategory}
+            />
+          </div>
+        )}
 
-      {activeTab === "all" ? (
-        <>
-          <DocumentTable
-            documents={filteredDocuments}
-            onOpenDocument={handleOpenDocument}
-            canManage={canManage}
-          />
-          <Pagination
-            pageNumber={pageNumber}
-            totalPages={pagination.totalPages}
-            hasPrevious={pagination.hasPrevious}
-            hasNext={pagination.hasNext}
-            onPageChange={setPageNumber}
-          />
-        </>
-      ) : (
-        <NeedsAttentionList
-          items={knowledgeGaps}
-          canManage={canManage}
-          onOpenResolve={handleOpenResolve}
-        />
-      )}
+        {activeTab === "all" ? (
+          <ResourceState
+            isLoading={documentsResource.isLoading}
+            hasData={documentsResource.data !== null}
+            error={documentsResource.error}
+            onRetry={documentsResource.reload}
+          >
+            <DocumentTable
+              documents={filteredDocuments}
+              onOpenDocument={handleOpenDocument}
+              canManage={canManage}
+              emptyMessage={
+                activeCategory
+                  ? "No documents match this category on this page."
+                  : searchQuery
+                    ? "No documents match this name. Try another search."
+                    : canManage
+                      ? "Upload a document to make it available in this space."
+                      : "No documents yet. Contact a space manager to add one."
+              }
+              onEmptyAction={
+                activeCategory
+                  ? () => setActiveCategory(null)
+                  : searchQuery
+                    ? onClearSearch
+                    : canManage
+                      ? handleOpenUploadPanel
+                      : undefined
+              }
+              emptyActionLabel={
+                activeCategory
+                  ? "Clear filter"
+                  : searchQuery
+                    ? "Clear search"
+                    : "Upload document"
+              }
+            />
+            <Pagination
+              pageNumber={pageNumber}
+              totalPages={pagination.totalPages}
+              hasPrevious={pagination.hasPrevious}
+              hasNext={pagination.hasNext}
+              onPageChange={setPageNumber}
+            />
+          </ResourceState>
+        ) : (
+          <ResourceState
+            isLoading={knowledgeGapsLoading}
+            hasData={knowledgeGapsLoaded}
+            error={knowledgeGapsError}
+            onRetry={onGapsChanged}
+          >
+            <NeedsAttentionList
+              items={knowledgeGaps}
+              canManage={canManage}
+              onOpenResolve={handleOpenResolve}
+            />
+          </ResourceState>
+        )}
+      </motion.div>
 
       <DocumentDetailPanel
         documentPublicId={selectedDocumentId}

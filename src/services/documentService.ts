@@ -1,6 +1,9 @@
 import axios from "axios";
 import { handleApiError } from "../shared/handleApiError";
-import type { PaginationResponse } from "../types/commonType/pagination";
+import type {
+  PaginationResponse,
+  SearchPaginationResponse,
+} from "../types/commonType/pagination";
 import type {
   DocumentListItemDto,
   DocumentDetailsDto,
@@ -19,6 +22,24 @@ import api from "./api";
 const firstAlias = "knowledge-spaces";
 const afterAlias = "documents";
 export const documentService = {
+  searchDocumentsForUser: async (
+    spacePublicId: string,
+    documentName: string,
+    pageNumber = 1,
+    pageSize = 20,
+  ) => {
+    try {
+      const response = await api.get<
+        SearchPaginationResponse<DocumentListItemDto>
+      >(`${firstAlias}/${spacePublicId}/${afterAlias}/search`, {
+        params: { documentName: documentName.trim(), pageNumber, pageSize },
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
   getListDocumentsForUser: async (
     spacePublicId: string,
     pageNumber?: number,

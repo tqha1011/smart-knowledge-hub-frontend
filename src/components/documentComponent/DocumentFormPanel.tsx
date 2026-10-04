@@ -1,5 +1,14 @@
+import { useResource } from "../common/useResource";
+import { LoadError } from "../common/ResourceState";
+import { Button } from "../common/Button";
+import {
+  backdropMotion,
+  fadeMotion,
+  indicatorTransition,
+  panelMotion,
+} from "../../shared/motion";
 // src/components/documentComponent/DocumentFormPanel.tsx
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { toast } from "react-toastify";
@@ -8,7 +17,6 @@ import type {
   DocumentDetailsDto,
   DocumentPermission,
   DocumentVisibility,
-  UserDataSpaceDto,
 } from "../../types";
 import { STATUS_BADGE, fileTypeFromFileName } from "./documentDisplay";
 import { FileDropzone } from "./FileDropzone";
@@ -108,7 +116,15 @@ function DocumentFormPanelBody({
   const [permissions, setPermissions] = useState<PermissionEntry[]>(
     document?.permissions ?? [],
   );
-  const [spaceMembers, setSpaceMembers] = useState<UserDataSpaceDto[]>([]);
+  const membersLoader = useCallback(
+    () => knowledgeSpaceService.getListUser(spacePublicId),
+    [spacePublicId],
+  );
+  const membersResource = useResource(
+    `permission-members:${spacePublicId}`,
+    membersLoader,
+  );
+  const spaceMembers = membersResource.data?.items ?? [];
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [contentMode, setContentMode] = useState<"upload" | "write">("upload");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -120,15 +136,6 @@ function DocumentFormPanelBody({
   // failed validation attempt never permanently locks out a resubmit.
   const hasSubmittedRef = useRef(false);
   const panelRef = usePanelDismiss(true, onClose);
-
-  // People picker for "Visible to" — fetched once per panel open, only
-  // used if the user switches to Restricted.
-  useEffect(() => {
-    knowledgeSpaceService
-      .getListUser(spacePublicId)
-      .then((response) => setSpaceMembers(response.items))
-      .catch((error: ApiErrorResponse) => toast.error(toErrorMessage(error)));
-  }, [spacePublicId]);
 
   const availableMembers = spaceMembers.filter(
     (member) => !permissions.some((p) => p.userPublicId === member.publicId),
@@ -293,11 +300,8 @@ function DocumentFormPanelBody({
       <motion.button
         type="button"
         aria-label="Close document form"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-        className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+        {...backdropMotion(prefersReducedMotion)}
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <motion.div
@@ -305,23 +309,17 @@ function DocumentFormPanelBody({
         role="dialog"
         aria-modal="true"
         aria-label={document ? "Edit document details" : "Upload document"}
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{
-          duration: prefersReducedMotion ? 0 : 0.22,
-          ease: "easeOut",
-        }}
-        className="bg-surface absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col overflow-y-auto p-5 shadow-lg"
+        {...panelMotion(prefersReducedMotion)}
+        className="overlay-panel bg-surface absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col overflow-y-auto p-5 shadow-lg"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <h2 className="font-display text-ink truncate text-lg font-semibold">
+            <h2 className="font-display text-ink truncate text-xl font-semibold">
               {document ? "Edit document details" : "Upload document"}
             </h2>
             {document && (
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[11px] font-medium ${STATUS_BADGE[document.status].className}`}
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[document.status].className}`}
               >
                 {STATUS_BADGE[document.status].label}
               </span>
@@ -344,30 +342,44 @@ function DocumentFormPanelBody({
                 key={mode}
                 type="button"
                 onClick={() => setContentMode(mode)}
-                className={`border-b-2 px-3 py-2 text-sm font-semibold ${
+                aria-pressed={contentMode === mode}
+                className={`relative px-3 py-3 text-sm font-semibold ${
                   contentMode === mode
-                    ? "border-accent text-accent"
-                    : "text-ink-muted hover:text-ink border-transparent"
+                    ? "text-accent"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
+                {contentMode === mode && (
+                  <motion.span
+                    aria-hidden="true"
+                    layoutId={
+                      prefersReducedMotion ? undefined : "document-input-mode"
+                    }
+                    transition={indicatorTransition(prefersReducedMotion)}
+                    className="bg-accent absolute inset-x-0 bottom-0 h-0.5"
+                  />
+                )}
                 {mode === "upload" ? "Upload file" : "Write content"}
               </button>
             ))}
           </div>
         )}
 
-        {!document &&
-          (contentMode === "upload" ? (
-            <FileDropzone
-              selectedFile={selectedFile}
-              onFileSelect={setSelectedFile}
-            />
-          ) : (
-            <MarkdownContentEditor
-              value={markdownContent}
-              onChange={setMarkdownContent}
-            />
-          ))}
+        {!document && (
+          <motion.div key={contentMode} {...fadeMotion(prefersReducedMotion)}>
+            {contentMode === "upload" ? (
+              <FileDropzone
+                selectedFile={selectedFile}
+                onFileSelect={setSelectedFile}
+              />
+            ) : (
+              <MarkdownContentEditor
+                value={markdownContent}
+                onChange={setMarkdownContent}
+              />
+            )}
+          </motion.div>
+        )}
 
         <div className="mt-5 flex flex-col gap-3">
           <div>
@@ -477,13 +489,26 @@ function DocumentFormPanelBody({
                       </button>
                     </div>
                   ))}
+                  {membersResource.error && (
+                    <LoadError
+                      message={membersResource.error}
+                      onRetry={membersResource.reload}
+                      isLoading={membersResource.isLoading}
+                    />
+                  )}
                   <select
+                    aria-label="Add a person with document access"
+                    disabled={
+                      membersResource.isLoading || membersResource.data === null
+                    }
                     value={selectedMemberId}
                     onChange={(event) => handleAddMember(event.target.value)}
                     className="border-border text-ink-muted mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none"
                   >
                     <option value="" disabled>
-                      Add a person…
+                      {membersResource.isLoading
+                        ? "Loading people…"
+                        : "Add a person…"}
                     </option>
                     {availableMembers.map((member) => (
                       <option key={member.publicId} value={member.publicId}>
@@ -513,14 +538,14 @@ function DocumentFormPanelBody({
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="bg-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="bg-accent text-on-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
         >
           {isSubmitting ? "Saving…" : document ? "Save changes" : "Upload"}
-        </button>
+        </Button>
       </motion.div>
     </div>
   );

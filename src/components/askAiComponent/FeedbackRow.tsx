@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { useState } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import type { FeedbackVote } from "../../types";
@@ -55,19 +56,20 @@ export function FeedbackRow({ vote, onSubmit }: FeedbackRowProps) {
       {isCommentOpen && (
         <div className="mt-2 flex flex-col gap-2">
           <textarea
+            aria-label="Feedback comment"
             value={comment}
             onChange={(event) => setComment(event.target.value)}
             placeholder="What could be improved? (optional)"
             rows={2}
             className="border-border text-ink placeholder:text-ink-muted focus:border-accent w-full resize-y rounded-md border px-2 py-1.5 text-xs outline-none"
           />
-          <button
+          <Button
             type="button"
             onClick={() => onSubmit("not-helpful", comment.trim() || undefined)}
-            className="bg-accent self-start rounded-md px-2.5 py-1.5 text-xs font-semibold text-white"
+            className="bg-accent text-on-accent self-start rounded-md px-2.5 py-1.5 text-xs font-semibold"
           >
             Send feedback
-          </button>
+          </Button>
         </div>
       )}
     </div>

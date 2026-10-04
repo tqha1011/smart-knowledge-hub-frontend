@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import { useResource } from "../common/useResource";
+import { LoadError } from "../common/ResourceState";
+import { Button } from "../common/Button";
+import { backdropMotion, panelMotion } from "../../shared/motion";
+import { useCallback, useState } from "react";
 import type { FormEvent } from "react";
 import { X, Plus } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -10,7 +14,6 @@ import {
 import { CreateSpaceTypeModal } from "./CreateSpaceTypeModal";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 import { toErrorMessage } from "../../shared/handleApiError";
-import type { SpaceType } from "../../types";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 interface CreateSpacePanelProps {
@@ -33,35 +36,17 @@ export function CreateSpacePanel({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [typeId, setTypeId] = useState("");
-  const [types, setTypes] = useState<SpaceType[]>([]);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const typesLoader = useCallback(
+    () => knowledgeSpaceTypeService.getListTypes(),
+    [],
+  );
+  const typesResource = useResource("space-types", typesLoader, 0, isOpen);
+  const types = typesResource.data ?? [];
+  const isLoadingTypes = typesResource.isLoading;
+  const loadTypes = typesResource.reload;
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const loadTypes = async () => {
-    setIsLoadingTypes(true);
-    try {
-      const data = await knowledgeSpaceTypeService.getListTypes();
-      setTypes(data);
-      return data;
-    } finally {
-      setIsLoadingTypes(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isOpen || types.length > 0) return;
-    let isActive = true;
-    knowledgeSpaceTypeService.getListTypes().then((data) => {
-      if (!isActive) return;
-      setTypes(data);
-      setIsLoadingTypes(false);
-    });
-    return () => {
-      isActive = false;
-    };
-  }, [isOpen, types.length]);
 
   const resetForm = () => {
     setName("");
@@ -123,25 +108,16 @@ export function CreateSpacePanel({
         {isOpen && (
           <div className="fixed inset-0 z-40 flex justify-end">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
+              {...backdropMotion(prefersReducedMotion)}
               onClick={handleClose}
-              className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40"
             />
             <motion.div
               ref={panelRef}
               role="dialog"
               aria-modal="true"
               aria-label="Create space"
-              initial={{ x: prefersReducedMotion ? 0 : "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: prefersReducedMotion ? 0 : "100%" }}
-              transition={{
-                duration: prefersReducedMotion ? 0 : 0.22,
-                ease: "easeOut",
-              }}
+              {...panelMotion(prefersReducedMotion)}
               className="border-border bg-surface relative flex h-full w-full max-w-[420px] flex-col overflow-y-auto border-l p-6 shadow-lg"
             >
               <div className="mb-6 flex items-center justify-between">
@@ -212,6 +188,13 @@ export function CreateSpacePanel({
                       Create new type
                     </button>
                   </div>
+                  {typesResource.error && (
+                    <LoadError
+                      message={typesResource.error}
+                      onRetry={loadTypes}
+                      isLoading={isLoadingTypes}
+                    />
+                  )}
                   <select
                     id="space-type"
                     value={typeId}
@@ -240,13 +223,13 @@ export function CreateSpacePanel({
                   >
                     Cancel
                   </button>
-                  <button
+                  <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-accent rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    className="bg-accent text-on-accent rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60"
                   >
                     {isSubmitting ? "Creating..." : "Create space"}
-                  </button>
+                  </Button>
                 </div>
               </form>
             </motion.div>

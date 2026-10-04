@@ -1,3 +1,5 @@
+import { Button } from "../common/Button";
+import { backdropMotion, popupMotion } from "../../shared/motion";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
@@ -5,6 +7,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { knowledgeSpaceTypeService } from "../../services/spaceService";
 import { toErrorMessage } from "../../shared/handleApiError";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface CreateSpaceTypeModalProps {
   isOpen: boolean;
@@ -32,6 +35,7 @@ export function CreateSpaceTypeModal({
     setError(null);
     onClose();
   };
+  const dialogRef = usePanelDismiss(isOpen, handleClose);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -60,25 +64,20 @@ export function CreateSpaceTypeModal({
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
+            {...backdropMotion(prefersReducedMotion)}
             onClick={handleClose}
-            className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40"
           />
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Create new type"
-            initial={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: prefersReducedMotion ? 1 : 0.96 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
+            {...popupMotion(prefersReducedMotion)}
             className="border-border bg-surface relative w-full max-w-sm rounded-lg border p-5 shadow-lg"
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-ink text-lg font-semibold">
+              <h2 className="font-display text-ink text-xl font-semibold">
                 New type
               </h2>
               <button
@@ -119,13 +118,13 @@ export function CreateSpaceTypeModal({
                 >
                   Cancel
                 </button>
-                <button
+                <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-accent rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="bg-accent text-on-accent rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
                 >
                   {isSubmitting ? "Creating..." : "Create type"}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>

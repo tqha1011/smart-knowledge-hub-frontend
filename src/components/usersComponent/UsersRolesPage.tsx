@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useResource } from "../common/useResource";
+import { ResourceState } from "../common/ResourceState";
+import { Button } from "../common/Button";
+import { useCallback, useState } from "react";
 import { Plus } from "lucide-react";
-import { toast } from "react-toastify";
 import { UsersTable } from "./UsersTable";
 import { UserDetailPanel } from "./UserDetailPanel";
 import { AddMemberPanel } from "./AddMemberPanel";
 import { Pagination } from "../common/Pagination";
 import { knowledgeSpaceService } from "../../services/spaceService";
-import { toErrorMessage } from "../../shared/handleApiError";
 import type { Space, UserDataSpaceDto } from "../../types";
-import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
 interface UsersRolesPageProps {
   space: Space;
@@ -22,60 +22,30 @@ interface UsersRolesPageProps {
 export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
   const spacePublicId = space.id;
 
-  const [members, setMembers] = useState<UserDataSpaceDto[]>([]);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pagination, setPagination] = useState({
+  const membersLoader = useCallback(
+    () => knowledgeSpaceService.getListUser(spacePublicId, pageNumber),
+    [spacePublicId, pageNumber],
+  );
+  const membersResource = useResource(
+    `members:${spacePublicId}:${pageNumber}`,
+    membersLoader,
+  );
+  const members = membersResource.data?.items ?? [];
+  const pagination = membersResource.data ?? {
     totalPages: 1,
     hasPrevious: false,
     hasNext: false,
-  });
+  };
+  const loadMembers = (page: number) => {
+    if (page !== pageNumber) setPageNumber(page);
+    else void membersResource.reload();
+  };
   const [selectedMember, setSelectedMember] = useState<UserDataSpaceDto | null>(
     null,
   );
   const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
   const [isAddPanelOpen, setIsAddPanelOpen] = useState(false);
-
-  const loadMembers = useCallback(
-    async (page: number) => {
-      try {
-        const response = await knowledgeSpaceService.getListUser(
-          spacePublicId,
-          page,
-        );
-        setMembers(response.items);
-        setPagination({
-          totalPages: response.totalPages,
-          hasPrevious: response.hasPrevious,
-          hasNext: response.hasNext,
-        });
-      } catch (error) {
-        toast.error(toErrorMessage(error as ApiErrorResponse));
-      }
-    },
-    [spacePublicId],
-  );
-
-  useEffect(() => {
-    let isActive = true;
-    knowledgeSpaceService
-      .getListUser(spacePublicId, pageNumber)
-      .then((response) => {
-        if (isActive) {
-          setMembers(response.items);
-          setPagination({
-            totalPages: response.totalPages,
-            hasPrevious: response.hasPrevious,
-            hasNext: response.hasNext,
-          });
-        }
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [spacePublicId, pageNumber]);
 
   const handleOpenMember = (member: UserDataSpaceDto) => {
     setSelectedMember(member);
@@ -106,40 +76,49 @@ export function UsersRolesPage({ space, canManage }: UsersRolesPageProps) {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="max-w-full min-w-0 break-words">
           <h1 className="font-display text-ink text-3xl font-semibold">
             Members
           </h1>
           <p className="text-ink-muted mt-1 text-sm">
-            {members.length} {members.length === 1 ? "person" : "people"} in{" "}
             {space.name}
+            {membersResource.data &&
+              ` · ${members.length} members on this page`}
           </p>
         </div>
         {canManage && (
-          <button
+          <Button
             type="button"
             onClick={() => setIsAddPanelOpen(true)}
-            className="bg-accent flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white"
+            className="bg-accent text-on-accent flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
           >
             <Plus size={16} />
             Add member
-          </button>
+          </Button>
         )}
       </div>
 
-      <UsersTable
-        members={members}
-        onOpenMember={handleOpenMember}
-        canManage={canManage}
-      />
+      <ResourceState
+        isLoading={membersResource.isLoading}
+        hasData={membersResource.data !== null}
+        error={membersResource.error}
+        onRetry={membersResource.reload}
+      >
+        <UsersTable
+          members={members}
+          onOpenMember={handleOpenMember}
+          canManage={canManage}
+          onAddMember={canManage ? () => setIsAddPanelOpen(true) : undefined}
+        />
 
-      <Pagination
-        pageNumber={pageNumber}
-        totalPages={pagination.totalPages}
-        hasPrevious={pagination.hasPrevious}
-        hasNext={pagination.hasNext}
-        onPageChange={setPageNumber}
-      />
+        <Pagination
+          pageNumber={pageNumber}
+          totalPages={pagination.totalPages}
+          hasPrevious={pagination.hasPrevious}
+          hasNext={pagination.hasNext}
+          onPageChange={setPageNumber}
+        />
+      </ResourceState>
 
       <UserDetailPanel
         member={selectedMember}

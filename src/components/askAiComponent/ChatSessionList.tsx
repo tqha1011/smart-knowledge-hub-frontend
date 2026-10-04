@@ -5,7 +5,6 @@ import { formatRelativeDate } from "../../shared/textFormat";
 
 interface ChatSessionListProps {
   sessions: ChatSessionListData[];
-  isLoading: boolean;
   onSelect: (session: ChatSessionListData) => void;
   onDelete: (session: ChatSessionListData) => void;
 }
@@ -16,19 +15,10 @@ interface ChatSessionListProps {
 // to fit a list row instead of a full panel footer.
 export function ChatSessionList({
   sessions,
-  isLoading,
   onSelect,
   onDelete,
 }: ChatSessionListProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-
-  if (isLoading) {
-    return (
-      <div className="text-ink-muted flex min-h-48 items-center justify-center text-center text-sm">
-        Loading chats…
-      </div>
-    );
-  }
 
   if (sessions.length === 0) {
     return (

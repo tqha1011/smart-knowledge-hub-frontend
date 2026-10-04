@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { Check } from "lucide-react";
 import type { UnansweredQuestionData } from "../../types";
 
@@ -31,20 +32,20 @@ export function NeedsAttentionList({
           key={item.publicId}
           className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div>
+          <div className="min-w-0 break-words">
             <p className="text-ink text-sm font-medium">{item.question}</p>
             <p className="text-ink-muted mt-0.5 text-xs">{item.reason}</p>
           </div>
           {canManage && (
             <div className="flex shrink-0 gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={() => onOpenResolve(item)}
-                className="bg-accent flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold text-white"
+                className="bg-accent text-on-accent flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold"
               >
                 <Check size={13} />
                 Resolve
-              </button>
+              </Button>
             </div>
           )}
         </li>

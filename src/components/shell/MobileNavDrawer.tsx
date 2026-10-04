@@ -1,9 +1,11 @@
+import { backdropMotion, panelMotion } from "../../shared/motion";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import type { ShellNavKey } from "./navItems";
 import type { CurrentUser, Space } from "../../types";
+import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface MobileNavDrawerProps {
   isOpen: boolean;
@@ -34,6 +36,7 @@ export function MobileNavDrawer({
   onToggleAskAi,
 }: MobileNavDrawerProps) {
   const prefersReducedMotion = useReducedMotion();
+  const panelRef = usePanelDismiss(isOpen, onClose);
 
   return (
     <AnimatePresence>
@@ -42,22 +45,17 @@ export function MobileNavDrawer({
           <motion.button
             type="button"
             aria-label="Close navigation menu"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-            className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+            {...backdropMotion(prefersReducedMotion)}
+            className="absolute inset-0 bg-black/40"
             onClick={onClose}
           />
           <motion.div
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{
-              duration: prefersReducedMotion ? 0 : 0.22,
-              ease: "easeOut",
-            }}
-            className="bg-surface absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col p-4 shadow-lg"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            {...panelMotion(prefersReducedMotion, "left")}
+            className="overlay-panel bg-surface absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col overflow-y-auto p-4 shadow-lg"
           >
             <div className="mb-3 flex items-center justify-between">
               {/* Product mark — also doubles as "back to all spaces" */}
@@ -65,7 +63,7 @@ export function MobileNavDrawer({
                 to="/spaces"
                 onClick={onClose}
                 aria-label="All spaces"
-                className="bg-accent-soft font-display text-accent flex size-8 items-center justify-center rounded-md text-sm font-semibold"
+                className="bg-accent-soft font-display text-accent flex size-11 items-center justify-center rounded-md text-sm font-semibold"
               >
                 K
               </Link>
@@ -83,7 +81,10 @@ export function MobileNavDrawer({
               variant="drawer"
               currentUser={currentUser}
               selectedSpace={selectedSpace}
-              onSelectSpace={onSelectSpace}
+              onSelectSpace={(space) => {
+                onSelectSpace(space);
+                onClose();
+              }}
               activeNavKey={activeNavKey}
               onNavigate={(key) => {
                 onNavigate(key);

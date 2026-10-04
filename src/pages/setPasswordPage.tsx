@@ -1,3 +1,4 @@
+import { Button } from "../components/common/Button";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -145,13 +146,13 @@ export function SetPasswordPage() {
             placeholder="••••••••"
           />
 
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting || !invite}
-            className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
           >
             {isSubmitting ? "Setting password..." : "Set password & continue"}
-          </button>
+          </Button>
         </form>
       </AuthCard>
     </PageTransition>

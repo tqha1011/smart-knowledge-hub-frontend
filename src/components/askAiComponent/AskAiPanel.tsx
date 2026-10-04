@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useResource } from "../common/useResource";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
 import type {
@@ -107,8 +108,20 @@ export function AskAiPanel({
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
-  const [sessions, setSessions] = useState<ChatSessionListData[]>([]);
-  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const sessionsLoader = useCallback(
+    () => chatService.getSessions(selectedSpaceId, 1, SESSION_LIST_PAGE_SIZE),
+    [selectedSpaceId],
+  );
+  const sessionsResource = useResource(
+    `sessions:${selectedSpaceId}`,
+    sessionsLoader,
+    0,
+    isOpen && viewMode === "list",
+  );
+  const sessions = sessionsResource.data?.items ?? [];
+  const [sessionError, setSessionError] = useState<string | null>(null);
+  const sessionRequest = useRef(0);
+  const requestedSession = useRef<ChatSessionListData | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const isMountedRef = useRef(true);
 
@@ -124,50 +137,50 @@ export function AskAiPanel({
     };
   }, []);
 
-  const loadSessions = async () => {
-    setIsLoadingSessions(true);
-    try {
-      const response = await chatService.getSessions(
-        selectedSpaceId,
-        1,
-        SESSION_LIST_PAGE_SIZE,
-      );
-      if (isMountedRef.current) setSessions(response.items);
-    } catch (error) {
-      if (isMountedRef.current) {
-        toast.error(toErrorMessage(error as ApiErrorResponse));
-      }
-    } finally {
-      if (isMountedRef.current) setIsLoadingSessions(false);
-    }
-  };
+  const loadSessions = sessionsResource.reload;
 
   const handleOpenHistory = () => {
+    if (isSending) return;
+    sessionRequest.current++;
+    setIsLoadingSession(false);
     setViewMode("list");
-    loadSessions();
   };
 
   const handleNewChat = () => {
+    if (isSending) return;
+    sessionRequest.current++;
+    requestedSession.current = null;
+    setSessionError(null);
+    setIsLoadingSession(false);
     setActiveSessionId(null);
     setMessages([]);
     setViewMode("conversation");
   };
 
   const handleSelectSession = async (session: ChatSessionListData) => {
+    if (isSending) return;
+    const request = ++sessionRequest.current;
+    requestedSession.current = session;
+    setActiveSessionId(session.publicId);
+    setMessages([]);
+    setSessionError(null);
+    setViewMode("conversation");
     setIsLoadingSession(true);
     try {
       const detail = await chatService.getSessionDetail(
         selectedSpaceId,
         session.publicId,
       );
-      if (!isMountedRef.current) return;
+      if (!isMountedRef.current || request !== sessionRequest.current) return;
       setActiveSessionId(detail.publicId);
       setMessages(detail.messages.items.map(toUiMessage));
       setViewMode("conversation");
     } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
+      if (isMountedRef.current && request === sessionRequest.current)
+        setSessionError(toErrorMessage(error as ApiErrorResponse));
     } finally {
-      if (isMountedRef.current) setIsLoadingSession(false);
+      if (isMountedRef.current && request === sessionRequest.current)
+        setIsLoadingSession(false);
     }
   };
 
@@ -175,9 +188,7 @@ export function AskAiPanel({
     try {
       await chatService.deleteSession(selectedSpaceId, session.publicId);
       if (!isMountedRef.current) return;
-      setSessions((prev) =>
-        prev.filter((s) => s.publicId !== session.publicId),
-      );
+      void loadSessions();
       if (activeSessionId === session.publicId) {
         setActiveSessionId(null);
         setMessages([]);
@@ -301,7 +312,15 @@ export function AskAiPanel({
           isSending={isSending}
           isLoadingSession={isLoadingSession}
           sessions={sessions}
-          isLoadingSessions={isLoadingSessions}
+          isLoadingSessions={sessionsResource.isLoading}
+          sessionsLoaded={sessionsResource.data !== null}
+          sessionsError={sessionsResource.error}
+          sessionError={sessionError}
+          onRetrySessions={loadSessions}
+          onRetrySession={() => {
+            if (requestedSession.current)
+              void handleSelectSession(requestedSession.current);
+          }}
           onInputChange={setInputValue}
           onSend={handleSend}
           onFeedback={handleFeedback}

@@ -1,3 +1,4 @@
+import { Button } from "../components/common/Button";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -106,13 +107,13 @@ export function LoginPage() {
             </Link>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
-          </button>
+          </Button>
         </form>
       </AuthCard>
     </PageTransition>

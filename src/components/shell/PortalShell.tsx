@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useResource } from "../common/useResource";
+import { ResourceState, Skeleton } from "../common/ResourceState";
+import { useCallback, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
 import { IconRail } from "./IconRail";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
@@ -16,15 +17,7 @@ import { PageTransition } from "../common/PageTransition";
 import { knowledgeSpaceService } from "../../services/spaceService";
 import { unansweredQuestionService } from "../../services/unansweredQuestionService";
 import { toCurrentUser, userService } from "../../services/userService";
-import { toErrorMessage } from "../../shared/handleApiError";
-import type {
-  CurrentUser,
-  Space,
-  SpaceListItemDto,
-  SpaceMembership,
-  UnansweredQuestionData,
-} from "../../types";
-import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
+import type { Space, SpaceListItemDto, SpaceMembership } from "../../types";
 
 function toSpace(item: SpaceListItemDto, colorDot: string): Space {
   return { id: item.publicId, name: item.name, colorDot };
@@ -39,52 +32,45 @@ export function PortalShell() {
   const [activeNavKey, setActiveNavKey] = useState<ShellNavKey>("documents");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isAskAiOpen, setIsAskAiOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [documentSearch, setDocumentSearch] = useState({
+    query: "",
+    revision: 0,
+  });
+  const handleDocumentSearch = (query: string) => {
+    const trimmed = query.trim();
+    setSearchValue(trimmed);
+    setDocumentSearch((previous) => ({
+      query: trimmed,
+      revision: previous.revision + 1,
+    }));
+    setActiveNavKey("documents");
+  };
 
-  // null = still loading. Fetched once per mount — a Space switch changes
-  // the URL's pathname, which re-keys <Routes> in App.tsx and remounts this
-  // component fresh, so there's no separate spaceId-change effect to write.
-  const [spaces, setSpaces] = useState<SpaceListItemDto[] | null>(null);
-  const [meUser, setMeUser] = useState<CurrentUser | null>(null);
-
-  useEffect(() => {
-    let isActive = true;
-    knowledgeSpaceService
-      .getUserSpaces()
-      .then((response) => {
-        if (isActive) setSpaces(response.items);
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    userService
-      .getMe()
-      .then((dto) => {
-        if (isActive) setMeUser(toCurrentUser(dto));
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  // Lifted here (not into DocumentLibrary) because the gap count also
-  // feeds the sidebar/rail/mobile-drawer badges, which are siblings of
-  // DocumentLibrary, not descendants. Fetched off the route param directly
-  // (not the resolved Space entry) so this doesn't have to wait on `spaces`
-  // — declared above any conditional return, since hooks can't be called
-  // conditionally.
-  const [knowledgeGaps, setKnowledgeGaps] = useState<UnansweredQuestionData[]>(
+  const spacesLoader = useCallback(
+    async () => (await knowledgeSpaceService.getUserSpaces()).items,
     [],
   );
+  const meLoader = useCallback(
+    async () => toCurrentUser(await userService.getMe()),
+    [],
+  );
+  const spacesResource = useResource("shell-spaces", spacesLoader);
+  const meResource = useResource("current-user", meLoader);
+  const spaces = spacesResource.data;
+  const meUser = meResource.data;
+  const gapsLoader = useCallback(
+    () => unansweredQuestionService.getUnansweredQuestions(spaceId!),
+    [spaceId],
+  );
+  const gapsResource = useResource(
+    `gaps:${spaceId}`,
+    gapsLoader,
+    0,
+    Boolean(spaceId),
+  );
+  const knowledgeGaps = gapsResource.data?.items ?? [];
+  const loadKnowledgeGaps = gapsResource.reload;
 
   // Bumped whenever the Assistant answers a question — a citation can
   // change a document's `cited` count, so DocumentLibrary refetches its
@@ -94,43 +80,23 @@ export function PortalShell() {
     setDocumentsRefreshTick((tick) => tick + 1);
   };
 
-  // Reusable for the post-resolve refetch (called from an event handler,
-  // not an effect) — the mount fetch below is written inline instead of
-  // calling this, since calling a setState-bearing function from inside an
-  // effect body trips react-hooks/set-state-in-effect.
-  const loadKnowledgeGaps = useCallback(async () => {
-    if (!spaceId) return;
-    try {
-      const response =
-        await unansweredQuestionService.getUnansweredQuestions(spaceId);
-      setKnowledgeGaps(response.items);
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, [spaceId]);
-
-  useEffect(() => {
-    if (!spaceId) return;
-    let isActive = true;
-    unansweredQuestionService
-      .getUnansweredQuestions(spaceId)
-      .then((response) => {
-        if (isActive) setKnowledgeGaps(response.items);
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [spaceId]);
-
   const needsAttentionCount = knowledgeGaps.length;
 
   if (spaces === null || meUser === null) {
+    const failed = spacesResource.error ? spacesResource : meResource;
     return (
-      <div className="bg-bg text-ink-muted flex h-dvh items-center justify-center text-sm">
-        Loading…
+      <div className="bg-bg min-h-dvh p-4 sm:p-6">
+        <ResourceState
+          isLoading={spacesResource.isLoading || meResource.isLoading}
+          hasData={false}
+          error={failed.error}
+          onRetry={() => {
+            void spacesResource.reload();
+            void meResource.reload();
+          }}
+        >
+          <Skeleton />
+        </ResourceState>
       </div>
     );
   }
@@ -157,10 +123,7 @@ export function PortalShell() {
 
   const canManage = currentUser.isAdmin || currentEntry.role === "Editor";
 
-  // Ask AI isn't wired to a real backend yet (still a mock chat flow), so
-  // there's no server-side event to react to here — just resync with the
-  // real queue rather than fabricating a local entry with a fake publicId,
-  // which "Resolve" couldn't actually act on.
+  // Refresh the real queue after an answer without sources.
   const handleLogKnowledgeGap = () => {
     loadKnowledgeGaps();
   };
@@ -202,16 +165,31 @@ export function PortalShell() {
           <div className="flex min-w-0 flex-1 flex-col">
             <Topbar
               currentUser={currentUser}
+              spaceName={selectedSpace.name}
+              searchValue={searchValue}
+              onSearchChange={(value) => {
+                setSearchValue(value);
+                if (!value.trim() && documentSearch.query) {
+                  setDocumentSearch((previous) => ({
+                    query: "",
+                    revision: previous.revision + 1,
+                  }));
+                }
+              }}
+              onSearch={handleDocumentSearch}
               onOpenMobileNav={() => setIsMobileNavOpen(true)}
             />
 
             {/* Main content area */}
-            <main className="flex-1 overflow-y-auto p-6 pb-24 sm:pb-6">
+            <main className="portal-content min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
               {(activeNavKey === "documents" ||
                 activeNavKey === "needs-attention") && (
                 <DocumentLibrary
                   space={selectedSpace}
                   canManage={canManage}
+                  searchQuery={documentSearch.query}
+                  searchRevision={documentSearch.revision}
+                  onClearSearch={() => handleDocumentSearch("")}
                   activeTab={
                     activeNavKey === "needs-attention"
                       ? "needs-attention"
@@ -219,6 +197,9 @@ export function PortalShell() {
                   }
                   onTabChange={handleLibraryTabChange}
                   knowledgeGaps={knowledgeGaps}
+                  knowledgeGapsLoading={gapsResource.isLoading}
+                  knowledgeGapsError={gapsResource.error}
+                  knowledgeGapsLoaded={gapsResource.data !== null}
                   onGapsChanged={loadKnowledgeGaps}
                   refreshSignal={documentsRefreshTick}
                 />

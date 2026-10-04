@@ -5,6 +5,7 @@ import { Bold, Code, Heading, List } from "lucide-react";
 interface MarkdownContentEditorProps {
   value: string;
   onChange: (value: string) => void;
+  label?: string;
 }
 
 type ToolbarAction = "bold" | "heading" | "list" | "code";
@@ -17,6 +18,7 @@ type ToolbarAction = "bold" | "heading" | "list" | "code";
 export function MarkdownContentEditor({
   value,
   onChange,
+  label = "Document content",
 }: MarkdownContentEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -126,6 +128,7 @@ export function MarkdownContentEditor({
         </button>
       </div>
       <textarea
+        aria-label={label}
         ref={textareaRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}

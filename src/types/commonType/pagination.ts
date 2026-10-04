@@ -7,3 +7,11 @@ export interface PaginationResponse<T> {
   hasPrevious: boolean;
   hasNext: boolean;
 }
+
+// Document search uses the singular currentPage in its response contract.
+export interface SearchPaginationResponse<T> extends Omit<
+  PaginationResponse<T>,
+  "currentPages"
+> {
+  currentPage: number;
+}

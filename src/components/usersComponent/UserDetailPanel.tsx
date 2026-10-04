@@ -1,3 +1,5 @@
+import { Button } from "../common/Button";
+import { backdropMotion, panelMotion } from "../../shared/motion";
 // src/components/usersComponent/UserDetailPanel.tsx
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -6,7 +8,7 @@ import { toast } from "react-toastify";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 import { knowledgeSpaceMemberService } from "../../services/spaceService";
 import { toErrorMessage } from "../../shared/handleApiError";
-import { initialsFromName } from "../../shared/textFormat";
+import { formatRelativeDate, initialsFromName } from "../../shared/textFormat";
 import type { SpaceRole, UserDataSpaceDto } from "../../types";
 import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 
@@ -126,11 +128,8 @@ function UserDetailPanelBody({
       <motion.button
         type="button"
         aria-label="Close member details"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-        className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+        {...backdropMotion(prefersReducedMotion)}
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <motion.div
@@ -138,14 +137,8 @@ function UserDetailPanelBody({
         role="dialog"
         aria-modal="true"
         aria-label={`${member.name} details`}
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{
-          duration: prefersReducedMotion ? 0 : 0.22,
-          ease: "easeOut",
-        }}
-        className="bg-surface absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col overflow-y-auto p-5 shadow-lg"
+        {...panelMotion(prefersReducedMotion)}
+        className="overlay-panel bg-surface absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col overflow-y-auto p-5 shadow-lg"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -153,10 +146,10 @@ function UserDetailPanelBody({
               {initialsFromName(member.name)}
             </span>
             <div className="min-w-0">
-              <h2 className="font-display text-ink truncate text-lg font-semibold">
+              <h2 className="font-display text-ink text-xl font-semibold break-words">
                 {member.name}
               </h2>
-              <p className="text-ink-muted truncate text-xs">{member.email}</p>
+              <p className="text-ink-muted text-xs break-all">{member.email}</p>
             </div>
           </div>
           <button
@@ -172,6 +165,12 @@ function UserDetailPanelBody({
         <div className="border-border rounded-lg border p-3">
           <p className="text-ink-muted text-xs">Current role</p>
           <p className="text-ink mt-0.5 text-sm font-semibold">{member.role}</p>
+        </div>
+        <div className="mt-4">
+          <p className="text-ink-muted text-xs">Joined</p>
+          <p className="text-ink mt-1 text-sm">
+            {formatRelativeDate(member.joinedAt)}
+          </p>
         </div>
 
         {canManage && (
@@ -200,14 +199,14 @@ function UserDetailPanelBody({
                   </option>
                 ))}
               </select>
-              <button
+              <Button
                 type="button"
                 onClick={handleSaveRole}
                 disabled={!newRole || isSavingRole}
-                className="bg-accent rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="bg-accent text-on-accent rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
               >
                 {isSavingRole ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         )}
