@@ -4,28 +4,37 @@ import { ResourceState } from "../components/common/ResourceState";
 import { useCallback, useState } from "react";
 import { LogOut, Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
 import { Pagination } from "../components/common/Pagination";
-import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
+import { SpaceFormPanel } from "../components/spaceComponent/SpaceFormPanel";
 import { spaceColorPalette } from "../components/shell/shellMockData";
 import { authService } from "../services/authService";
 import { disconnectRealtime } from "../services/realtimeService";
 import { knowledgeSpaceService } from "../services/spaceService";
 import { toCurrentUser, userService } from "../services/userService";
 import { clearSession, getRefreshToken } from "../shared/authSession";
+import type { SpaceListItemDto } from "../types/commonType/space";
 
 // Landing page after login — every Space the current user belongs to, one
-// card each. Both Admin and Employee land here; only per-action gating
-// (isAdmin for the global "New space" action, isAdmin || Editor-in-that-Space
-// for the per-card "Manage" action) hides buttons from Employees. Clicking a
-// card itself is what routes into that Space's Document Library (portal shell).
+// card each. Creation requires Admin; Settings requires Admin and Space Owner.
+// Clicking a card routes into that Space's Document Library (portal shell).
 export function SpacesOverviewPage() {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const [pageNumber, setPageNumber] = useState(1);
-  const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
+  const [spaceForm, setSpaceForm] = useState<{
+    isOpen: boolean;
+    session: number;
+    space: SpaceListItemDto | null;
+  }>({ isOpen: false, session: 0, space: null });
+  const openSpaceForm = (space: SpaceListItemDto | null) => {
+    setSpaceForm((previous) => ({
+      isOpen: true,
+      session: previous.session + 1,
+      space,
+    }));
+  };
   const meLoader = useCallback(
     async () => toCurrentUser(await userService.getMe()),
     [],
@@ -119,7 +128,7 @@ export function SpacesOverviewPage() {
             {currentUser.isAdmin && (
               <button
                 type="button"
-                onClick={() => setIsCreateSpaceOpen(true)}
+                onClick={() => openSpaceForm(null)}
                 className="border-border text-ink hover:bg-surface-sunken flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
               >
                 <Plus size={16} />
@@ -144,10 +153,7 @@ export function SpacesOverviewPage() {
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {spaces.map((space, index) => {
-                // Space-scoped action: global Admin OR Editor in *this* Space —
-                // not gated on isAdmin alone, per the (Space, role) permission model.
-                const canManage =
-                  currentUser.isAdmin || space.role === "Editor";
+                const canManage = currentUser.isAdmin && space.role === "Owner";
                 const colorDot =
                   spaceColorPalette[index % spaceColorPalette.length];
 
@@ -189,9 +195,7 @@ export function SpacesOverviewPage() {
                     {canManage && (
                       <button
                         type="button"
-                        onClick={() =>
-                          toast.info("Space management isn't built yet.")
-                        }
+                        onClick={() => openSpaceForm(space)}
                         aria-label={`Manage ${space.name}`}
                         className="text-ink-muted hover:bg-surface-sunken absolute top-3 right-3 flex size-11 items-center justify-center rounded-md"
                       >
@@ -214,13 +218,18 @@ export function SpacesOverviewPage() {
         </main>
       </div>
 
-      <CreateSpacePanel
-        isOpen={isCreateSpaceOpen}
-        onClose={() => setIsCreateSpaceOpen(false)}
-        onCreated={() => {
-          if (pageNumber === 1) void spacesResource.reload();
-          else setPageNumber(1);
-        }}
+      <SpaceFormPanel
+        key={spaceForm.session}
+        isOpen={spaceForm.isOpen}
+        space={spaceForm.space}
+        onClose={() =>
+          setSpaceForm((current) =>
+            current.session === spaceForm.session
+              ? { ...current, isOpen: false }
+              : current,
+          )
+        }
+        onSaved={() => void spacesResource.reload()}
       />
     </PageTransition>
   );

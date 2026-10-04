@@ -37,6 +37,8 @@ export interface CreateSpaceTypeDto {
 export interface SpaceListItemDto {
   publicId: string;
   name: string;
+  description?: string | null;
+  typePublicId: string;
   totalDocuments: number;
   typeName: string;
   role: SpaceRole;

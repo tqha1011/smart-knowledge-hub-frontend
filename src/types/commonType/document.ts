@@ -118,6 +118,28 @@ export interface DocumentListItemDto {
   cited: number;
 }
 
+export interface TrashDocumentDto extends DocumentListItemDto {
+  /** ISO 8601 timestamps. The backend decides whether restoration is allowed. */
+  deletedAt: string;
+  purgeAfter: string;
+}
+
+export interface TrashDocumentsResponse {
+  items: TrashDocumentDto[];
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
+}
+
+export interface RestoredDocumentDto extends Omit<
+  DocumentListItemDto,
+  "status"
+> {
+  status: "Ready" | "Failed";
+}
+
 export interface DocumentDetailsDto {
   publicId: string;
   title: string;

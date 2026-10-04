@@ -2,8 +2,13 @@ import { useResource } from "../common/useResource";
 import { ResourceState } from "../common/ResourceState";
 import { Button } from "../common/Button";
 import { backdropMotion, panelMotion } from "../../shared/motion";
-import { useCallback, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from "framer-motion";
 import {
   Download,
   FileText,
@@ -34,8 +39,12 @@ interface DocumentDetailPanelProps {
   documentPublicId: string | null;
   isOpen: boolean;
   space: Space;
-  /** isAdmin || Editor-in-this-Space — gates Edit details / Replace file / Delete. */
+  /** Existing upload/edit permissions. Delete and restore use Space membership. */
   canManage: boolean;
+  canDeleteAndRestore: boolean;
+  sessionId: number;
+  onDeleted: () => void;
+  isCurrentSpace: () => boolean;
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
   onReplaceFile: (document: DocumentDetailsDto) => void;
@@ -54,6 +63,10 @@ export function DocumentDetailPanel({
   isOpen,
   space,
   canManage,
+  canDeleteAndRestore,
+  sessionId,
+  onDeleted,
+  isCurrentSpace,
   onClose,
   onEditDetails,
   onReplaceFile,
@@ -61,14 +74,33 @@ export function DocumentDetailPanel({
   refreshSignal,
 }: DocumentDetailPanelProps) {
   const prefersReducedMotion = useReducedMotion();
+  const mutationPending = useRef(false);
+  const [isMutating, setIsMutating] = useState(false);
+  const beginMutation = () => {
+    if (mutationPending.current) return false;
+    mutationPending.current = true;
+    setIsMutating(true);
+    return true;
+  };
+  const endMutation = () => {
+    mutationPending.current = false;
+    setIsMutating(false);
+  };
 
   return (
     <AnimatePresence>
       {isOpen && documentPublicId && (
         <DocumentDetailPanelBody
+          key={`${space.id}:${documentPublicId}:${sessionId}`}
           documentPublicId={documentPublicId}
           space={space}
           canManage={canManage}
+          canDeleteAndRestore={canDeleteAndRestore}
+          onDeleted={onDeleted}
+          isCurrentSpace={isCurrentSpace}
+          isMutating={isMutating}
+          beginMutation={beginMutation}
+          endMutation={endMutation}
           onClose={onClose}
           onEditDetails={onEditDetails}
           onReplaceFile={onReplaceFile}
@@ -85,6 +117,12 @@ interface DocumentDetailPanelBodyProps {
   documentPublicId: string;
   space: Space;
   canManage: boolean;
+  canDeleteAndRestore: boolean;
+  onDeleted: () => void;
+  isCurrentSpace: () => boolean;
+  isMutating: boolean;
+  beginMutation: () => boolean;
+  endMutation: () => void;
   onClose: () => void;
   onEditDetails: (document: DocumentDetailsDto) => void;
   onReplaceFile: (document: DocumentDetailsDto) => void;
@@ -101,6 +139,12 @@ function DocumentDetailPanelBody({
   documentPublicId,
   space,
   canManage,
+  canDeleteAndRestore,
+  onDeleted,
+  isCurrentSpace,
+  isMutating,
+  beginMutation,
+  endMutation,
   onClose,
   onEditDetails,
   onReplaceFile,
@@ -120,7 +164,19 @@ function DocumentDetailPanelBody({
   const document = detailResource.data;
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const panelRef = usePanelDismiss(true, onClose);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const isPresent = useIsPresent();
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = isPresent;
+    return () => {
+      active.current = false;
+    };
+  }, [isPresent]);
+  const panelRef = usePanelDismiss(true, onClose, false, () =>
+    window.document.getElementById("library-tab-all"),
+  );
 
   const handleOpenFile = () => {
     const newTab = window.open("", "_blank");
@@ -140,22 +196,51 @@ function DocumentDetailPanelBody({
       });
   };
 
-  const handleDelete = () => {
-    toast.info("Deleting documents isn't available yet.");
-    setIsConfirmingDelete(false);
+  const handleDelete = async () => {
+    if (
+      !canDeleteAndRestore ||
+      !active.current ||
+      !isCurrentSpace() ||
+      !beginMutation()
+    )
+      return;
+    setIsDeleting(true);
+    setMutationError(null);
+    try {
+      await documentService.deleteDocument(space.id, documentPublicId);
+      onDeleted();
+    } catch (error) {
+      if (active.current && isCurrentSpace())
+        setMutationError(toErrorMessage(error as ApiErrorResponse));
+    } finally {
+      endMutation();
+      if (active.current && isCurrentSpace()) setIsDeleting(false);
+    }
   };
 
   const handleRetry = async () => {
+    if (
+      !(canManage || canDeleteAndRestore) ||
+      !active.current ||
+      !isCurrentSpace() ||
+      !beginMutation()
+    )
+      return;
     setIsRetrying(true);
+    setMutationError(null);
     try {
       await documentService.retryIngestionDocument(space.id, documentPublicId);
-      toast.success("Retry started. Reprocessing this document.");
-      void detailResource.reload();
+      if (active.current && isCurrentSpace()) {
+        toast.success("Retry started. Reprocessing this document.");
+        void detailResource.reload();
+      }
       onRetried();
     } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
+      if (active.current && isCurrentSpace())
+        setMutationError(toErrorMessage(error as ApiErrorResponse));
     } finally {
-      setIsRetrying(false);
+      endMutation();
+      if (active.current && isCurrentSpace()) setIsRetrying(false);
     }
   };
 
@@ -305,31 +390,34 @@ function DocumentDetailPanelBody({
                 <Button
                   type="button"
                   onClick={handleOpenFile}
+                  disabled={isMutating}
                   className="bg-accent text-on-accent flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
                 >
                   <Download size={15} />
                   Open / Download
                 </Button>
-                {canManage && document.status === "Failed" && (
-                  <button
-                    type="button"
-                    onClick={handleRetry}
-                    disabled={isRetrying}
-                    className="bg-warn-bg text-warn-fg flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
-                  >
-                    <RotateCw
-                      size={14}
-                      className={isRetrying ? "animate-spin" : undefined}
-                    />
-                    {isRetrying ? "Retrying…" : "Retry processing"}
-                  </button>
-                )}
+                {(canManage || canDeleteAndRestore) &&
+                  document.status === "Failed" && (
+                    <button
+                      type="button"
+                      onClick={handleRetry}
+                      disabled={isMutating}
+                      className="bg-warn-bg text-warn-fg flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                    >
+                      <RotateCw
+                        size={14}
+                        className={isRetrying ? "animate-spin" : undefined}
+                      />
+                      {isRetrying ? "Retrying…" : "Retry processing"}
+                    </button>
+                  )}
                 {canManage && (
                   <>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => onEditDetails(document)}
+                        disabled={isMutating}
                         className="border-border text-ink hover:bg-surface-sunken flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
                       >
                         <Pencil size={14} />
@@ -338,34 +426,56 @@ function DocumentDetailPanelBody({
                       <button
                         type="button"
                         onClick={() => onReplaceFile(document)}
+                        disabled={isMutating}
                         className="border-border text-ink hover:bg-surface-sunken flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
                       >
                         <RefreshCw size={14} />
                         Replace file
                       </button>
                     </div>
+                  </>
+                )}
+                {mutationError && (
+                  <p
+                    role="alert"
+                    className="bg-warn-bg text-warn-fg rounded-md px-3 py-2 text-sm break-words"
+                  >
+                    {mutationError}
+                  </p>
+                )}
+                {canDeleteAndRestore && (
+                  <>
                     {isConfirmingDelete ? (
-                      <div className="mt-1 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsConfirmingDelete(false)}
-                          className="border-border text-ink hover:bg-surface-sunken flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleDelete}
-                          className="bg-warn-bg text-warn-fg flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
-                        >
-                          <Trash2 size={14} />
-                          Confirm delete
-                        </button>
+                      <div className="mt-1 space-y-3">
+                        <p className="text-ink-muted text-sm">
+                          Move this document to Trash? You can restore it before
+                          the restore deadline shown in Trash.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsConfirmingDelete(false)}
+                            disabled={isMutating}
+                            className="border-border text-ink hover:bg-surface-sunken flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={isMutating}
+                            className="bg-warn-bg text-warn-fg flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
+                          >
+                            <Trash2 size={14} />
+                            {isDeleting ? "Deleting…" : "Confirm delete"}
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <button
                         type="button"
                         onClick={() => setIsConfirmingDelete(true)}
+                        disabled={isMutating}
                         className="bg-warn-bg text-warn-fg mt-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold"
                       >
                         <Trash2 size={14} />

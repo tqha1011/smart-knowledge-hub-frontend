@@ -12,10 +12,12 @@ export function usePanelDismiss(
   isOpen: boolean,
   onClose: () => void,
   disabled = false,
+  fallbackFocus?: () => HTMLElement | null,
 ): RefObject<HTMLDivElement | null> {
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   const disabledRef = useRef(disabled);
+  const fallbackFocusRef = useRef(fallbackFocus);
   const isPresent = useIsPresent();
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -23,6 +25,9 @@ export function usePanelDismiss(
   useEffect(() => {
     disabledRef.current = disabled;
   }, [disabled]);
+  useEffect(() => {
+    fallbackFocusRef.current = fallbackFocus;
+  }, [fallbackFocus]);
 
   useEffect(() => {
     if (!isOpen || !isPresent) return;
@@ -99,7 +104,7 @@ export function usePanelDismiss(
           !previouslyFocused.closest("[inert]")
         )
           previouslyFocused.focus();
-        else nextPanel?.focus();
+        else (nextPanel ?? fallbackFocusRef.current?.())?.focus();
       }
     };
   }, [isOpen, isPresent]);

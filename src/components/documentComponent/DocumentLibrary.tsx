@@ -1,14 +1,15 @@
 import { toast } from "react-toastify";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useIsPresent, useReducedMotion } from "framer-motion";
 import { fadeMotion, indicatorTransition } from "../../shared/motion";
 import { useResource } from "../common/useResource";
 import { ResourceState, LoadError } from "../common/ResourceState";
 import { Button } from "../common/Button";
 // src/components/documentComponent/DocumentLibrary.tsx
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { CategoryFilterChips } from "./CategoryFilterChips";
 import { DocumentTable } from "./DocumentTable";
+import { TrashDocumentList } from "./TrashDocumentList";
 import { NeedsAttentionList } from "./NeedsAttentionList";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentFormPanel } from "./DocumentFormPanel";
@@ -26,12 +27,14 @@ import type {
   UnansweredQuestionData,
 } from "../../types";
 
-export type DocumentLibraryTab = "all" | "needs-attention";
+export type DocumentLibraryTab = "all" | "needs-attention" | "trash";
 
 interface DocumentLibraryProps {
   space: Space;
   /** isAdmin || Editor-in-this-Space — gates Upload, row actions, gap actions. */
   canManage: boolean;
+  canDeleteAndRestore: boolean;
+  isCurrentSpace: () => boolean;
   searchQuery: string;
   searchRevision: number;
   onClearSearch: () => void;
@@ -57,6 +60,8 @@ interface DocumentLibraryProps {
 export function DocumentLibrary({
   space,
   canManage,
+  canDeleteAndRestore,
+  isCurrentSpace,
   searchQuery,
   searchRevision,
   onClearSearch,
@@ -70,6 +75,19 @@ export function DocumentLibrary({
   refreshSignal,
 }: DocumentLibraryProps) {
   const spacePublicId = space.id;
+  const isPresent = useIsPresent();
+  const active = useRef(false);
+  useEffect(() => {
+    active.current = isPresent;
+    return () => {
+      active.current = false;
+    };
+  }, [isPresent]);
+  const [trashRefreshSignal, setTrashRefreshSignal] = useState(0);
+  const detailSession = useRef<number | null>(null);
+  const deleteFocusPending = useRef(false);
+  const nextDetailSession = useRef(0);
+  const [detailSessionId, setDetailSessionId] = useState(0);
 
   const reduced = useReducedMotion();
   // A new search (including resubmitting it) starts at page one immediately.
@@ -100,6 +118,33 @@ export function DocumentLibrary({
     hasPrevious: false,
     hasNext: false,
   };
+  const totalPages = documentsResource.data?.totalPages;
+  // Refetch commits after its promise resolves. Restore focus after the row
+  // has actually left the DOM, as well as during the panel's exit cleanup.
+  useEffect(() => {
+    if (!deleteFocusPending.current || documentsResource.isLoading) return;
+    deleteFocusPending.current = false;
+    if (
+      active.current &&
+      isCurrentSpace() &&
+      detailSession.current === null &&
+      document.activeElement === document.body
+    ) {
+      document.getElementById("library-tab-all")?.focus();
+    }
+  }, [documentsResource.data, documentsResource.isLoading, isCurrentSpace]);
+  useEffect(() => {
+    if (totalPages === undefined || pageNumber <= Math.max(1, totalPages))
+      return;
+    let current = true;
+    void Promise.resolve().then(() => {
+      if (current)
+        setPageState({ key: listKey, page: Math.max(1, totalPages) });
+    });
+    return () => {
+      current = false;
+    };
+  }, [totalPages, pageNumber, listKey]);
   const categoriesLoader = useCallback(
     () => categoryService.getListCategory(spacePublicId),
     [spacePublicId],
@@ -169,11 +214,16 @@ export function DocumentLibrary({
     : documents;
 
   const handleOpenDocument = (doc: DocumentListItemDto) => {
+    const session = ++nextDetailSession.current;
+    detailSession.current = session;
+    setDetailSessionId(session);
     setSelectedDocumentId(doc.publicId);
     setIsDetailPanelOpen(true);
   };
 
   const handleCloseDetail = () => {
+    if (detailSession.current !== detailSessionId) return;
+    detailSession.current = null;
     setIsDetailPanelOpen(false);
   };
 
@@ -210,8 +260,31 @@ export function DocumentLibrary({
   // Panel stays open on retry (unlike replace/edit) so the user can watch
   // the status badge move from Failed to Processing without losing place.
   const handleRetried = () => {
+    if (!active.current || !isCurrentSpace()) return;
     loadDocuments(pageNumber);
   };
+
+  const handleDeleted = async () => {
+    if (!active.current || !isCurrentSpace()) return;
+    toast.success("Document moved to Trash.");
+    setTrashRefreshSignal((signal) => signal + 1);
+    if (detailSession.current === detailSessionId) {
+      detailSession.current = null;
+      setIsDetailPanelOpen(false);
+    }
+    if (detailSession.current === null) deleteFocusPending.current = true;
+    await reloadDocuments();
+  };
+
+  const handleRestored = () => {
+    if (active.current && isCurrentSpace()) void reloadDocuments();
+  };
+
+  const tabs: { key: DocumentLibraryTab; label: string }[] = [
+    { key: "all", label: "All documents" },
+    { key: "needs-attention", label: "Needs attention" },
+    ...(canDeleteAndRestore ? [{ key: "trash" as const, label: "Trash" }] : []),
+  ];
 
   // Clear the active category filter on a successful create/update so the
   // mutated document is guaranteed visible — otherwise a stale filter can
@@ -269,12 +342,7 @@ export function DocumentLibrary({
         aria-label="Document views"
         className="border-border mb-4 flex gap-1 border-b"
       >
-        {(
-          [
-            { key: "all", label: "All documents" },
-            { key: "needs-attention", label: "Needs attention" },
-          ] as const
-        ).map(({ key, label }) => (
+        {tabs.map(({ key, label }, index) => (
           <button
             key={key}
             type="button"
@@ -290,14 +358,16 @@ export function DocumentLibrary({
               )
                 return;
               event.preventDefault();
-              const next =
+              const nextIndex =
                 event.key === "Home"
-                  ? "all"
+                  ? 0
                   : event.key === "End"
-                    ? "needs-attention"
-                    : key === "all"
-                      ? "needs-attention"
-                      : "all";
+                    ? tabs.length - 1
+                    : (index +
+                        (event.key === "ArrowRight" ? 1 : -1) +
+                        tabs.length) %
+                      tabs.length;
+              const next = tabs[nextIndex].key;
               onTabChange(next);
               event.currentTarget.parentElement
                 ?.querySelector<HTMLButtonElement>(`#library-tab-${next}`)
@@ -327,108 +397,127 @@ export function DocumentLibrary({
         ))}
       </div>
 
-      <motion.div
-        key={activeTab}
-        {...fadeMotion(reduced)}
-        role="tabpanel"
-        id={`library-view-${activeTab}`}
-        aria-labelledby={`library-tab-${activeTab}`}
-      >
-        {activeTab === "all" && searchQuery && (
-          <p role="status" className="text-ink-muted mb-4 text-sm break-words">
-            Results for{" "}
-            <span className="text-ink font-semibold">“{searchQuery}”</span>
-          </p>
-        )}
-        {activeTab === "all" && categoriesResource.error && (
-          <div className="mb-4">
-            <LoadError
-              message={categoriesResource.error}
-              onRetry={loadCategories}
-              isLoading={categoriesResource.isLoading}
-            />
-          </div>
-        )}
-        {activeTab === "all" && categoryNames.length > 0 && (
-          <div className="mb-4">
-            <CategoryFilterChips
-              categories={categoryNames}
-              activeCategory={activeCategory}
-              onSelect={setActiveCategory}
-            />
-          </div>
-        )}
+      {activeTab !== "trash" && (
+        <motion.div
+          key={activeTab}
+          {...fadeMotion(reduced)}
+          role="tabpanel"
+          id={`library-view-${activeTab}`}
+          aria-labelledby={`library-tab-${activeTab}`}
+        >
+          {activeTab === "all" && searchQuery && (
+            <p
+              role="status"
+              className="text-ink-muted mb-4 text-sm break-words"
+            >
+              Results for{" "}
+              <span className="text-ink font-semibold">“{searchQuery}”</span>
+            </p>
+          )}
+          {activeTab === "all" && categoriesResource.error && (
+            <div className="mb-4">
+              <LoadError
+                message={categoriesResource.error}
+                onRetry={loadCategories}
+                isLoading={categoriesResource.isLoading}
+              />
+            </div>
+          )}
+          {activeTab === "all" && categoryNames.length > 0 && (
+            <div className="mb-4">
+              <CategoryFilterChips
+                categories={categoryNames}
+                activeCategory={activeCategory}
+                onSelect={setActiveCategory}
+              />
+            </div>
+          )}
 
-        {activeTab === "all" ? (
-          <ResourceState
-            isLoading={documentsResource.isLoading}
-            hasData={documentsResource.data !== null}
-            error={documentsResource.error}
-            onRetry={documentsResource.reload}
-          >
-            <DocumentTable
-              documents={filteredDocuments}
-              onOpenDocument={handleOpenDocument}
-              canManage={canManage}
-              emptyMessage={
-                activeCategory
-                  ? "No documents match this category on this page."
-                  : searchQuery
-                    ? "No documents match this name. Try another search."
-                    : canManage
-                      ? "Upload a document to make it available in this space."
-                      : "No documents yet. Contact a space manager to add one."
-              }
-              onEmptyAction={
-                activeCategory
-                  ? () => setActiveCategory(null)
-                  : searchQuery
-                    ? onClearSearch
-                    : canManage
-                      ? handleOpenUploadPanel
-                      : undefined
-              }
-              emptyActionLabel={
-                activeCategory
-                  ? "Clear filter"
-                  : searchQuery
-                    ? "Clear search"
-                    : "Upload document"
-              }
-            />
-            <Pagination
-              pageNumber={pageNumber}
-              totalPages={pagination.totalPages}
-              hasPrevious={pagination.hasPrevious}
-              hasNext={pagination.hasNext}
-              onPageChange={setPageNumber}
-            />
-          </ResourceState>
-        ) : (
-          <ResourceState
-            isLoading={knowledgeGapsLoading}
-            hasData={knowledgeGapsLoaded}
-            error={knowledgeGapsError}
-            onRetry={onGapsChanged}
-          >
-            <NeedsAttentionList
-              items={knowledgeGaps}
-              canManage={canManage}
-              onOpenResolve={handleOpenResolve}
-            />
-          </ResourceState>
-        )}
-      </motion.div>
+          {activeTab === "all" ? (
+            <ResourceState
+              isLoading={documentsResource.isLoading}
+              hasData={documentsResource.data !== null}
+              error={documentsResource.error}
+              onRetry={documentsResource.reload}
+            >
+              <DocumentTable
+                documents={filteredDocuments}
+                onOpenDocument={handleOpenDocument}
+                canManage={canManage}
+                emptyMessage={
+                  activeCategory
+                    ? "No documents match this category on this page."
+                    : searchQuery
+                      ? "No documents match this name. Try another search."
+                      : canManage
+                        ? "Upload a document to make it available in this space."
+                        : "No documents yet. Contact a space manager to add one."
+                }
+                onEmptyAction={
+                  activeCategory
+                    ? () => setActiveCategory(null)
+                    : searchQuery
+                      ? onClearSearch
+                      : canManage
+                        ? handleOpenUploadPanel
+                        : undefined
+                }
+                emptyActionLabel={
+                  activeCategory
+                    ? "Clear filter"
+                    : searchQuery
+                      ? "Clear search"
+                      : "Upload document"
+                }
+              />
+              <Pagination
+                pageNumber={pageNumber}
+                totalPages={pagination.totalPages}
+                hasPrevious={pagination.hasPrevious}
+                hasNext={pagination.hasNext}
+                onPageChange={setPageNumber}
+              />
+            </ResourceState>
+          ) : (
+            <ResourceState
+              isLoading={knowledgeGapsLoading}
+              hasData={knowledgeGapsLoaded}
+              error={knowledgeGapsError}
+              onRetry={onGapsChanged}
+            >
+              <NeedsAttentionList
+                items={knowledgeGaps}
+                canManage={canManage}
+                onOpenResolve={handleOpenResolve}
+              />
+            </ResourceState>
+          )}
+        </motion.div>
+      )}
+
+      {canDeleteAndRestore && (
+        <TrashDocumentList
+          spacePublicId={spacePublicId}
+          enabled={activeTab === "trash" && isPresent}
+          refreshSignal={trashRefreshSignal}
+          onRestored={handleRestored}
+          isCurrentSpace={isCurrentSpace}
+        />
+      )}
 
       <DocumentDetailPanel
         documentPublicId={selectedDocumentId}
         isOpen={isDetailPanelOpen}
         space={space}
         canManage={canManage}
+        canDeleteAndRestore={canDeleteAndRestore}
+        isCurrentSpace={isCurrentSpace}
+        sessionId={detailSessionId}
         onClose={handleCloseDetail}
         onEditDetails={handleEditDetails}
         onReplaceFile={handleReplaceFile}
         onRetried={handleRetried}
+        onDeleted={handleDeleted}
         refreshSignal={detailRefreshSignal}
       />
 

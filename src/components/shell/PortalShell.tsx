@@ -1,6 +1,6 @@
 import { useResource } from "../common/useResource";
 import { ResourceState, Skeleton } from "../common/ResourceState";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { IconRail } from "./IconRail";
 import { Sidebar } from "./Sidebar";
@@ -29,7 +29,19 @@ function toSpace(item: SpaceListItemDto, colorDot: string): Space {
 export function PortalShell() {
   const { spaceId } = useParams<{ spaceId: string }>();
   const navigate = useNavigate();
+  // Invalidate the old Space synchronously when navigation starts, including
+  // the interval before its exit animation and effect cleanup run.
+  const activeSpaceId = useRef(spaceId);
+  const isCurrentSpace = useCallback(
+    () => activeSpaceId.current === spaceId,
+    [spaceId],
+  );
   const [activeNavKey, setActiveNavKey] = useState<ShellNavKey>("documents");
+  const [libraryTab, setLibraryTab] = useState<DocumentLibraryTab>("all");
+  const handleNavigate = (key: ShellNavKey) => {
+    setActiveNavKey(key);
+    setLibraryTab(key === "needs-attention" ? "needs-attention" : "all");
+  };
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isAskAiOpen, setIsAskAiOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -45,6 +57,7 @@ export function PortalShell() {
       revision: previous.revision + 1,
     }));
     setActiveNavKey("documents");
+    setLibraryTab("all");
   };
 
   const spacesLoader = useCallback(
@@ -122,6 +135,8 @@ export function PortalShell() {
   const currentUser = { ...meUser, memberships };
 
   const canManage = currentUser.isAdmin || currentEntry.role === "Editor";
+  const canDeleteAndRestore =
+    currentEntry.role === "Editor" || currentEntry.role === "Owner";
 
   // Refresh the real queue after an answer without sources.
   const handleLogKnowledgeGap = () => {
@@ -129,12 +144,16 @@ export function PortalShell() {
   };
 
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
+    setLibraryTab(tab);
     setActiveNavKey(
       tab === "needs-attention" ? "needs-attention" : "documents",
     );
   };
 
-  const handleSelectSpace = (space: Space) => navigate(`/spaces/${space.id}`);
+  const handleSelectSpace = (space: Space) => {
+    activeSpaceId.current = space.id;
+    navigate(`/spaces/${space.id}`);
+  };
 
   return (
     <PageTransition>
@@ -143,7 +162,7 @@ export function PortalShell() {
           {/* Icon rail — persistent from sm (640px) up */}
           <IconRail
             activeNavKey={activeNavKey}
-            onNavigate={setActiveNavKey}
+            onNavigate={handleNavigate}
             isAdmin={currentUser.isAdmin}
             needsAttentionCount={needsAttentionCount}
             isAskAiOpen={isAskAiOpen}
@@ -156,7 +175,7 @@ export function PortalShell() {
             selectedSpace={selectedSpace}
             onSelectSpace={handleSelectSpace}
             activeNavKey={activeNavKey}
-            onNavigate={setActiveNavKey}
+            onNavigate={handleNavigate}
             needsAttentionCount={needsAttentionCount}
             isAskAiOpen={isAskAiOpen}
             onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}
@@ -185,16 +204,15 @@ export function PortalShell() {
               {(activeNavKey === "documents" ||
                 activeNavKey === "needs-attention") && (
                 <DocumentLibrary
+                  key={selectedSpace.id}
                   space={selectedSpace}
                   canManage={canManage}
+                  canDeleteAndRestore={canDeleteAndRestore}
+                  isCurrentSpace={isCurrentSpace}
                   searchQuery={documentSearch.query}
                   searchRevision={documentSearch.revision}
                   onClearSearch={() => handleDocumentSearch("")}
-                  activeTab={
-                    activeNavKey === "needs-attention"
-                      ? "needs-attention"
-                      : "all"
-                  }
+                  activeTab={libraryTab}
                   onTabChange={handleLibraryTabChange}
                   knowledgeGaps={knowledgeGaps}
                   knowledgeGapsLoading={gapsResource.isLoading}
@@ -219,14 +237,14 @@ export function PortalShell() {
           selectedSpace={selectedSpace}
           onSelectSpace={handleSelectSpace}
           activeNavKey={activeNavKey}
-          onNavigate={setActiveNavKey}
+          onNavigate={handleNavigate}
           needsAttentionCount={needsAttentionCount}
           isAskAiOpen={isAskAiOpen}
           onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}
         />
         <BottomTabBar
           activeNavKey={activeNavKey}
-          onNavigate={setActiveNavKey}
+          onNavigate={handleNavigate}
           isAdmin={currentUser.isAdmin}
           isAskAiOpen={isAskAiOpen}
           onToggleAskAi={() => setIsAskAiOpen((prev) => !prev)}

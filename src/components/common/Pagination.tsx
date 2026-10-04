@@ -6,6 +6,7 @@ interface PaginationProps {
   hasPrevious: boolean;
   hasNext: boolean;
   onPageChange: (page: number) => void;
+  disabled?: boolean;
 }
 
 export function Pagination({
@@ -14,6 +15,7 @@ export function Pagination({
   hasPrevious,
   hasNext,
   onPageChange,
+  disabled = false,
 }: PaginationProps) {
   if (totalPages <= 1) return null;
 
@@ -21,7 +23,7 @@ export function Pagination({
     <div className="mt-4 flex items-center justify-between">
       <button
         type="button"
-        disabled={!hasPrevious}
+        disabled={disabled || !hasPrevious}
         onClick={() => onPageChange(pageNumber - 1)}
         className="text-ink-muted hover:bg-surface-sunken flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium disabled:opacity-40"
       >
@@ -33,7 +35,7 @@ export function Pagination({
       </span>
       <button
         type="button"
-        disabled={!hasNext}
+        disabled={disabled || !hasNext}
         onClick={() => onPageChange(pageNumber + 1)}
         className="text-ink-muted hover:bg-surface-sunken flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium disabled:opacity-40"
       >

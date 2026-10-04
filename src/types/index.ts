@@ -24,6 +24,9 @@ export type {
   NewDocumentInput,
   DocumentUpdateInput,
   DocumentListItemDto,
+  TrashDocumentDto,
+  TrashDocumentsResponse,
+  RestoredDocumentDto,
   DocumentDetailsDto,
   DocumentPermissionRequest,
 } from "./commonType/document";
