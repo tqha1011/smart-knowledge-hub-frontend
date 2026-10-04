@@ -1,3 +1,5 @@
+import { Button } from "../common/Button";
+import { backdropMotion, popupMotion } from "../../shared/motion";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -62,11 +64,8 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
       <motion.button
         type="button"
         aria-label="Close change password dialog"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-        className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+        {...backdropMotion(prefersReducedMotion)}
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -75,14 +74,11 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
           role="dialog"
           aria-modal="true"
           aria-label="Change password"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 8 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
+          {...popupMotion(prefersReducedMotion)}
           className="border-border bg-surface w-full max-w-sm rounded-lg border p-5 shadow-lg"
         >
           <div className="mb-4 flex items-start justify-between gap-3">
-            <h2 className="font-display text-ink text-lg font-semibold">
+            <h2 className="font-display text-ink text-xl font-semibold">
               Change password
             </h2>
             <button
@@ -138,13 +134,13 @@ export function ChangePasswordModal({ onClose }: ChangePasswordModalProps) {
               placeholder="••••••••"
             />
 
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {isSubmitting ? "Changing..." : "Change password"}
-            </button>
+            </Button>
           </form>
         </motion.div>
       </div>

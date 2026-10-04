@@ -1,3 +1,5 @@
+import { Button } from "../common/Button";
+import { backdropMotion, panelMotion } from "../../shared/motion";
 // src/components/usersComponent/AddMemberPanel.tsx
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -131,11 +133,8 @@ function AddMemberPanelBody({
       <motion.button
         type="button"
         aria-label="Close add member panel"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-        className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+        {...backdropMotion(prefersReducedMotion)}
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <motion.div
@@ -143,17 +142,11 @@ function AddMemberPanelBody({
         role="dialog"
         aria-modal="true"
         aria-label="Add member"
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{
-          duration: prefersReducedMotion ? 0 : 0.22,
-          ease: "easeOut",
-        }}
-        className="bg-surface absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col overflow-y-auto p-5 shadow-lg"
+        {...panelMotion(prefersReducedMotion)}
+        className="overlay-panel bg-surface absolute inset-y-0 right-0 flex w-full max-w-[420px] flex-col overflow-y-auto p-5 shadow-lg"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="font-display text-ink text-lg font-semibold">
+          <h2 className="font-display text-ink text-xl font-semibold">
             Add member
           </h2>
           <button
@@ -185,6 +178,7 @@ function AddMemberPanelBody({
                 )}
               </div>
               <input
+                aria-label={`Email for person ${index + 1}`}
                 type="email"
                 autoComplete="email"
                 value={card.email}
@@ -195,6 +189,7 @@ function AddMemberPanelBody({
                 className="border-border text-ink placeholder:text-ink-muted focus:border-accent mb-2 w-full rounded-md border px-3 py-2 text-sm outline-none"
               />
               <select
+                aria-label={`Role for person ${index + 1}`}
                 value={card.role}
                 onChange={(event) =>
                   handleRoleChange(card.key, event.target.value as SpaceRole)
@@ -218,16 +213,16 @@ function AddMemberPanelBody({
           Add another person
         </button>
 
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="bg-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="bg-accent text-on-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
         >
           {isSubmitting
             ? "Adding…"
             : `Add ${cards.length} member${cards.length === 1 ? "" : "s"}`}
-        </button>
+        </Button>
       </motion.div>
     </div>
   );

@@ -8,7 +8,7 @@ interface CitationChipProps {
 // functioning like an academic footnote.
 export function CitationChip({ number }: CitationChipProps) {
   return (
-    <span className="bg-citation-bg text-citation-fg mx-0.5 inline-flex size-4 items-center justify-center rounded-full align-text-top font-mono text-[10px] font-semibold">
+    <span className="bg-citation-bg text-citation-fg mx-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full align-text-top text-xs font-semibold">
       {number}
     </span>
   );

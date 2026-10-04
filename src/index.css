@@ -7,19 +7,20 @@
   --color-border: #ece8de;
   --color-ink: #1c2033;
   --color-ink-muted: #6e6a5f;
-  --color-accent: #0e8f82;
+  --color-accent: #08796f;
+  --color-on-accent: #ffffff;
   --color-accent-soft: #e3f3f0;
   --color-citation-bg: #fbf0dc;
-  --color-citation-fg: #b8860b;
+  --color-citation-fg: #805b08;
   --color-warn-bg: #fdeaea;
   --color-warn-fg: #c0392b;
   --color-avatar-bg: #1c2033;
   --color-avatar-fg: #ffffff;
 
   --color-status-ready-bg: #e7f5ec;
-  --color-status-ready-fg: #2f7d5b;
+  --color-status-ready-fg: #2d7756;
   --color-status-processing-bg: #fbf0dc;
-  --color-status-processing-fg: #b8860b;
+  --color-status-processing-fg: #805b08;
   --color-status-failed-bg: #fdeaea;
   --color-status-failed-fg: #c0392b;
 
@@ -35,7 +36,7 @@
   --font-mono: "IBM Plex Mono", monospace;
 
   --radius-sm: 8px;
-  --radius-md: 10px;
+  --radius-md: 8px;
   --radius-lg: 14px;
 
   /* Portal shell breakpoint: sidebar hides below 980px (icon rail stays);
@@ -54,6 +55,7 @@
   --color-ink: #edebe4;
   --color-ink-muted: #9ca3af;
   --color-accent: #35c9b8;
+  --color-on-accent: #14161b;
   --color-accent-soft: #16302d;
   --color-citation-bg: #2b2415;
   --color-citation-fg: #e3a64a;
@@ -83,4 +85,86 @@
 html,
 body {
   background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@layer base {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color;
+    transition-duration: 120ms;
+  }
+  button:not(:disabled),
+  a {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  tr {
+    transition: background-color 120ms;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    border-radius: var(--radius-sm);
+  }
+  @media (max-width: 639px) {
+    button:not([aria-hidden="true"]),
+    input:not([type="checkbox"]):not([type="radio"]),
+    select {
+      min-height: 44px;
+    }
+    button:not([aria-hidden="true"]) {
+      min-width: 44px;
+    }
+  }
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.control-button {
+  transition:
+    color 120ms,
+    background-color 120ms,
+    border-color 120ms;
+}
+.control-button:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+.skeleton-block {
+  background: var(--color-border);
+}
+.safe-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.portal-content {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+}
+.overlay-panel {
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  overscroll-behavior: contain;
+}
+@media (min-width: 640px) {
+  .portal-content {
+    padding-bottom: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

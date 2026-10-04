@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import {
   ADMIN_NAV_ITEM,
   ASSISTANT_NAV_ICON,
@@ -7,6 +8,8 @@ import {
 import type { ShellNavKey } from "./navItems";
 import { SpaceSwitcher } from "./SpaceSwitcher";
 import type { CurrentUser, Space } from "../../types";
+import { motion, useReducedMotion } from "framer-motion";
+import { indicatorTransition } from "../../shared/motion";
 
 interface SidebarProps {
   currentUser: CurrentUser;
@@ -28,24 +31,35 @@ function NavRow({
   isActive,
   onClick,
   trailing,
+  namespace,
 }: {
   icon: (typeof KNOWLEDGE_NAV_ITEMS)[number]["icon"];
   label: string;
   isActive: boolean;
   onClick: () => void;
   trailing?: React.ReactNode;
+  namespace: string;
 }) {
+  const reduced = useReducedMotion();
   return (
     <button
       type="button"
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
-      className={`flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm ${
+      className={`relative isolate flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-sm ${
         isActive
-          ? "bg-accent-soft text-accent font-semibold"
+          ? "text-accent font-semibold"
           : "text-ink hover:bg-surface-sunken"
       }`}
     >
+      {isActive && (
+        <motion.span
+          aria-hidden="true"
+          layoutId={reduced ? undefined : `${namespace}-destination`}
+          transition={indicatorTransition(reduced)}
+          className="bg-accent-soft absolute inset-0 -z-10 rounded-md"
+        />
+      )}
       <Icon size={16} className={isActive ? "text-accent" : "text-ink-muted"} />
       <span className="flex-1 truncate text-left">{label}</span>
       {trailing}
@@ -86,19 +100,20 @@ export function Sidebar({
       </div>
 
       {/* "Knowledge" eyebrow — Documents, Needs attention (badge = mock knowledge-gap count) */}
-      <p className="text-ink-muted mb-1 px-2.5 font-mono text-[11px] tracking-wide uppercase">
+      <p className="text-ink-muted mb-1 px-2.5 text-xs font-medium">
         Knowledge
       </p>
       {KNOWLEDGE_NAV_ITEMS.map(({ key, label, icon }) => (
         <NavRow
           key={key}
+          namespace={variant}
           icon={icon}
           label={label}
           isActive={activeNavKey === key}
           onClick={() => onNavigate(key)}
           trailing={
             key === "needs-attention" && needsAttentionCount > 0 ? (
-              <span className="bg-warn-bg text-warn-fg rounded-full px-1.5 py-0.5 font-mono text-[11px] font-medium">
+              <span className="bg-warn-bg text-warn-fg rounded-full px-1.5 py-0.5 text-xs font-medium">
                 {needsAttentionCount}
               </span>
             ) : undefined
@@ -107,10 +122,10 @@ export function Sidebar({
       ))}
 
       {/* "Assistant" eyebrow — Ask AI opens the floating panel, it never navigates */}
-      <p className="text-ink-muted mt-4 mb-1 px-2.5 font-mono text-[11px] tracking-wide uppercase">
+      <p className="text-ink-muted mt-4 mb-1 px-2.5 text-xs font-medium">
         Assistant
       </p>
-      <button
+      <Button
         type="button"
         onClick={onToggleAskAi}
         aria-pressed={isAskAiOpen}
@@ -120,19 +135,16 @@ export function Sidebar({
       >
         <ASSISTANT_NAV_ICON size={16} />
         <span className="flex-1 truncate text-left">{ASSISTANT_NAV_LABEL}</span>
-        <span
-          aria-hidden
-          className="bg-accent size-1.5 rounded-full motion-safe:animate-pulse"
-        />
-      </button>
+      </Button>
 
       {/* "Admin" eyebrow — Admin only, hidden entirely otherwise */}
       {currentUser.isAdmin && (
         <>
-          <p className="text-ink-muted mt-4 mb-1 px-2.5 font-mono text-[11px] tracking-wide uppercase">
+          <p className="text-ink-muted mt-4 mb-1 px-2.5 text-xs font-medium">
             Admin
           </p>
           <NavRow
+            namespace={variant}
             icon={ADMIN_NAV_ITEM.icon}
             label={ADMIN_NAV_ITEM.label}
             isActive={activeNavKey === ADMIN_NAV_ITEM.key}

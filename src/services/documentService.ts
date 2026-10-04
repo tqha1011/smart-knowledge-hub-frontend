@@ -1,6 +1,9 @@
 import axios from "axios";
 import { handleApiError } from "../shared/handleApiError";
-import type { PaginationResponse } from "../types/commonType/pagination";
+import type {
+  PaginationResponse,
+  SearchPaginationResponse,
+} from "../types/commonType/pagination";
 import type {
   DocumentListItemDto,
   DocumentDetailsDto,
@@ -12,6 +15,8 @@ import type {
   DocumentPermissionRequest,
   DocumentPermissionRequestBody,
   DocumentUpdateInput,
+  TrashDocumentsResponse,
+  RestoredDocumentDto,
 } from "../types/commonType/document";
 
 import api from "./api";
@@ -19,6 +24,67 @@ import api from "./api";
 const firstAlias = "knowledge-spaces";
 const afterAlias = "documents";
 export const documentService = {
+  deleteDocument: async (
+    spacePublicId: string,
+    documentPublicId: string,
+  ): Promise<void> => {
+    try {
+      await api.delete(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}`,
+      );
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  restoreDocument: async (
+    spacePublicId: string,
+    documentPublicId: string,
+  ): Promise<RestoredDocumentDto> => {
+    try {
+      const response = await api.post<RestoredDocumentDto>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/${documentPublicId}/restore`,
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getTrashDocuments: async (
+    spacePublicId: string,
+    pageNumber = 1,
+    pageSize = 20,
+  ): Promise<TrashDocumentsResponse> => {
+    try {
+      const response = await api.get<TrashDocumentsResponse>(
+        `${firstAlias}/${spacePublicId}/${afterAlias}/trash`,
+        { params: { pageNumber, pageSize } },
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  searchDocumentsForUser: async (
+    spacePublicId: string,
+    documentName: string,
+    pageNumber = 1,
+    pageSize = 20,
+  ) => {
+    try {
+      const response = await api.get<
+        SearchPaginationResponse<DocumentListItemDto>
+      >(`${firstAlias}/${spacePublicId}/${afterAlias}/search`, {
+        params: { documentName: documentName.trim(), pageNumber, pageSize },
+      });
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
   getListDocumentsForUser: async (
     spacePublicId: string,
     pageNumber?: number,

@@ -6,6 +6,7 @@ import {
   getRefreshToken,
   setSession,
 } from "../shared/authSession";
+import { disconnectRealtime } from "./realtimeService";
 
 const url = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 const api = axios.create({
@@ -87,6 +88,7 @@ api.interceptors.response.use(
 
     const refreshToken = getRefreshToken();
     if (!refreshToken) {
+      disconnectRealtime();
       clearSession();
       return Promise.reject(error);
     }
@@ -111,6 +113,7 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       rejectPendingRequests(refreshError);
+      disconnectRealtime();
       clearSession();
       window.location.href = "/login";
       return Promise.reject(error);

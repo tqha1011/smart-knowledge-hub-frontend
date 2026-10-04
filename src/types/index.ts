@@ -24,6 +24,9 @@ export type {
   NewDocumentInput,
   DocumentUpdateInput,
   DocumentListItemDto,
+  TrashDocumentDto,
+  TrashDocumentsResponse,
+  RestoredDocumentDto,
   DocumentDetailsDto,
   DocumentPermissionRequest,
 } from "./commonType/document";
@@ -50,6 +53,7 @@ export type {
   ChatMessageRequestDto,
   ChatMessageResponseDto,
 } from "./commonType/chat";
+export type { DocumentStatusUpdatedPayload } from "./commonType/realtime";
 export type {
   LoginDto,
   SetPasswordDto,

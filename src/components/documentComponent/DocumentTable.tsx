@@ -1,4 +1,5 @@
 import { Lock, MoreHorizontal } from "lucide-react";
+import { Button } from "../common/Button";
 import type { DocumentListItemDto } from "../../types";
 import {
   FILE_TYPE_BADGE_CLASS,
@@ -14,6 +15,9 @@ interface DocumentTableProps {
   onOpenDocument: (doc: DocumentListItemDto) => void;
   /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
   canManage: boolean;
+  emptyMessage?: string;
+  emptyActionLabel?: string;
+  onEmptyAction?: () => void;
 }
 
 // List/table view (spec: chosen over a card grid so category/owner/date/
@@ -24,36 +28,51 @@ export function DocumentTable({
   documents,
   onOpenDocument,
   canManage,
+  emptyMessage = "No documents in this space yet.",
+  emptyActionLabel,
+  onEmptyAction,
 }: DocumentTableProps) {
   if (documents.length === 0) {
     return (
-      <div className="border-border text-ink-muted flex min-h-48 items-center justify-center rounded-lg border border-dashed text-center text-sm">
-        No documents in this space yet.
+      <div className="border-border text-ink-muted flex min-h-48 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-6 text-center text-sm">
+        <p>{emptyMessage}</p>
+        {onEmptyAction && (
+          <Button
+            onClick={onEmptyAction}
+            className="bg-accent text-on-accent rounded-sm px-4 py-2 font-semibold"
+          >
+            {emptyActionLabel}
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="border-border overflow-hidden rounded-lg border">
-      <table className="w-full text-left text-sm">
+    <div className="border-border bg-surface overflow-hidden rounded-lg border">
+      <table className="w-full table-fixed text-left text-sm">
         <thead className="bg-surface-sunken text-ink-muted text-xs">
           <tr>
             <th className="px-4 py-2.5 font-medium">Name</th>
-            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+            <th className="hidden w-16 px-3 py-3 font-medium sm:table-cell">
               Type
             </th>
-            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+            <th className="hidden w-28 px-3 py-3 font-medium sm:table-cell">
               Status
             </th>
-            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+            <th className="shell:table-cell hidden w-28 px-3 py-3 font-medium">
               Category
             </th>
-            <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+            <th className="hidden w-36 px-3 py-3 font-medium xl:table-cell">
               Updated by
             </th>
-            <th className="px-4 py-2.5 font-medium">Updated</th>
-            <th className="px-4 py-2.5 font-medium">Cited</th>
-            <th className="px-2 py-2.5">
+            <th className="hidden w-28 px-4 py-3 font-medium xl:table-cell">
+              Updated
+            </th>
+            <th className="hidden w-16 px-3 py-3 font-medium sm:table-cell">
+              Cited
+            </th>
+            <th className="w-14 px-2 py-3">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
@@ -69,7 +88,7 @@ export function DocumentTable({
                     type="button"
                     onClick={() => onOpenDocument(doc)}
                     title={doc.title}
-                    className="text-ink flex min-w-0 items-center gap-2 text-left font-medium"
+                    className="text-ink flex w-full min-w-0 items-center gap-2 text-left font-medium"
                   >
                     <Icon size={16} className="text-ink-muted shrink-0" />
                     <span className="truncate">{baseName}</span>
@@ -83,26 +102,29 @@ export function DocumentTable({
                     )}
                   </button>
                 </td>
-                <td className="hidden px-4 py-3 sm:table-cell">
+                <td className="hidden px-3 py-3 sm:table-cell">
                   <span
-                    className={`rounded-full px-2 py-0.5 font-mono text-xs font-medium whitespace-nowrap ${FILE_TYPE_BADGE_CLASS[doc.fileType]}`}
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${FILE_TYPE_BADGE_CLASS[doc.fileType]}`}
                   >
                     {extension}
                   </span>
                 </td>
-                <td className="hidden px-4 py-3 sm:table-cell">
+                <td className="hidden px-3 py-3 sm:table-cell">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_BADGE[doc.status].className}`}
                   >
                     {STATUS_BADGE[doc.status].label}
                   </span>
                 </td>
-                <td className="hidden px-4 py-3 sm:table-cell">
-                  <span className="bg-surface-sunken text-ink-muted rounded-md px-2 py-1 text-xs font-medium">
+                <td className="shell:table-cell hidden px-3 py-3">
+                  <span
+                    title={doc.category.name}
+                    className="bg-surface-sunken text-ink-muted inline-block max-w-full truncate rounded-md px-2 py-1 align-middle text-xs font-medium"
+                  >
                     {doc.category.name}
                   </span>
                 </td>
-                <td className="hidden px-4 py-3 lg:table-cell">
+                <td className="hidden px-3 py-3 xl:table-cell">
                   <div className="flex min-w-0 items-center gap-2">
                     {doc.updatedBy.avatarUrl ? (
                       <img
@@ -120,11 +142,11 @@ export function DocumentTable({
                     </span>
                   </div>
                 </td>
-                <td className="text-ink-muted px-4 py-3 whitespace-nowrap">
+                <td className="text-ink-muted hidden px-3 py-3 xl:table-cell">
                   {formatRelativeDate(doc.lastUpdated)}
                 </td>
-                <td className="px-4 py-3">
-                  <span className="bg-citation-bg text-citation-fg rounded-full px-2 py-0.5 font-mono text-xs font-medium">
+                <td className="hidden px-3 py-3 sm:table-cell">
+                  <span className="bg-citation-bg text-citation-fg rounded-full px-2 py-0.5 text-xs font-medium">
                     {doc.cited}
                   </span>
                 </td>

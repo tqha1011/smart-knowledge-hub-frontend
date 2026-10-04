@@ -13,9 +13,9 @@ export function CategoryFilterChips({
   onSelect,
 }: CategoryFilterChipsProps) {
   const chipClass = (isActive: boolean) =>
-    `rounded-full px-3 py-1.5 text-xs font-semibold ${
+    `max-w-full rounded-full px-3 py-1.5 text-left text-xs font-semibold [overflow-wrap:anywhere] ${
       isActive
-        ? "bg-accent text-white"
+        ? "bg-accent-soft text-accent"
         : "bg-surface-sunken text-ink-muted hover:text-ink"
     }`;
 
@@ -24,6 +24,7 @@ export function CategoryFilterChips({
       <button
         type="button"
         onClick={() => onSelect(null)}
+        aria-pressed={activeCategory === null}
         className={chipClass(activeCategory === null)}
       >
         All
@@ -33,6 +34,7 @@ export function CategoryFilterChips({
           key={category}
           type="button"
           onClick={() => onSelect(category)}
+          aria-pressed={activeCategory === category}
           className={chipClass(activeCategory === category)}
         >
           {category}

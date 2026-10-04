@@ -1,3 +1,4 @@
+import { Button } from "../common/Button";
 import { Link } from "react-router-dom";
 import {
   ADMIN_NAV_ITEM,
@@ -6,6 +7,8 @@ import {
   KNOWLEDGE_NAV_ITEMS,
 } from "./navItems";
 import type { ShellNavKey } from "./navItems";
+import { motion, useReducedMotion } from "framer-motion";
+import { indicatorTransition } from "../../shared/motion";
 
 interface IconRailProps {
   activeNavKey: ShellNavKey;
@@ -27,6 +30,7 @@ export function IconRail({
   isAskAiOpen,
   onToggleAskAi,
 }: IconRailProps) {
+  const reduced = useReducedMotion();
   return (
     <div className="border-border bg-surface hidden w-14 shrink-0 flex-col items-center gap-1 border-r py-4 sm:flex">
       {/* Product mark — also doubles as "back to all spaces" */}
@@ -46,15 +50,23 @@ export function IconRail({
           onClick={() => onNavigate(key)}
           aria-label={label}
           aria-current={activeNavKey === key ? "page" : undefined}
-          className={`relative flex size-10 items-center justify-center rounded-md ${
+          className={`relative isolate flex size-10 items-center justify-center rounded-md ${
             activeNavKey === key
-              ? "bg-accent-soft text-accent"
+              ? "text-accent"
               : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
           }`}
         >
+          {activeNavKey === key && (
+            <motion.span
+              aria-hidden="true"
+              layoutId={reduced ? undefined : "rail-destination"}
+              transition={indicatorTransition(reduced)}
+              className="bg-accent-soft absolute inset-0 -z-10 rounded-md"
+            />
+          )}
           <Icon size={18} />
           {key === "needs-attention" && needsAttentionCount > 0 && (
-            <span className="bg-warn-bg text-warn-fg absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[10px] font-medium">
+            <span className="bg-warn-bg text-warn-fg absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs font-medium">
               {needsAttentionCount}
             </span>
           )}
@@ -64,7 +76,7 @@ export function IconRail({
       <div className="bg-border my-1 h-px w-6" />
 
       {/* Assistant icon: opens the Ask AI panel, never navigates */}
-      <button
+      <Button
         type="button"
         onClick={onToggleAskAi}
         aria-label={ASSISTANT_NAV_LABEL}
@@ -74,11 +86,7 @@ export function IconRail({
         }`}
       >
         <ASSISTANT_NAV_ICON size={18} />
-        <span
-          aria-hidden
-          className="bg-accent absolute top-1.5 right-1.5 size-1.5 rounded-full motion-safe:animate-pulse"
-        />
-      </button>
+      </Button>
 
       {/* Admin section icon: Users & Roles, Admin only */}
       {isAdmin && (
@@ -91,12 +99,20 @@ export function IconRail({
             aria-current={
               activeNavKey === ADMIN_NAV_ITEM.key ? "page" : undefined
             }
-            className={`flex size-10 items-center justify-center rounded-md ${
+            className={`relative isolate flex size-10 items-center justify-center rounded-md ${
               activeNavKey === ADMIN_NAV_ITEM.key
-                ? "bg-accent-soft text-accent"
+                ? "text-accent"
                 : "text-ink-muted hover:bg-surface-sunken hover:text-ink"
             }`}
           >
+            {activeNavKey === ADMIN_NAV_ITEM.key && (
+              <motion.span
+                aria-hidden="true"
+                layoutId={reduced ? undefined : "rail-destination"}
+                transition={indicatorTransition(reduced)}
+                className="bg-accent-soft absolute inset-0 -z-10 rounded-md"
+              />
+            )}
             <ADMIN_NAV_ITEM.icon size={18} />
           </button>
         </>

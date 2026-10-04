@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound } from "lucide-react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import type { CurrentUser } from "../../types";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { popupMotion } from "../../shared/motion";
 
 interface UserMenuProps {
   currentUser: CurrentUser;
@@ -14,9 +16,14 @@ export function UserMenu({ currentUser }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     if (!isOpen) return;
+    menuRef.current
+      ?.querySelector<HTMLButtonElement>('[role="menuitem"]')
+      ?.focus();
 
     function handlePointerDown(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) {
@@ -24,7 +31,10 @@ export function UserMenu({ currentUser }: UserMenuProps) {
       }
     }
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setIsOpen(false);
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
     }
 
     document.addEventListener("mousedown", handlePointerDown);
@@ -38,6 +48,7 @@ export function UserMenu({ currentUser }: UserMenuProps) {
   return (
     <div ref={menuRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="menu"
@@ -54,36 +65,42 @@ export function UserMenu({ currentUser }: UserMenuProps) {
         <ChevronDown size={14} className="text-ink-muted" />
       </button>
 
-      {isOpen && (
-        <div
-          role="menu"
-          aria-label="Account menu"
-          className="border-border bg-surface absolute top-full right-0 z-30 mt-2 w-56 rounded-md border py-1 shadow-lg"
-        >
-          <div className="border-border mb-1 border-b px-3 py-2">
-            <p className="text-ink text-sm font-medium">{currentUser.name}</p>
-            <p className="text-ink-muted truncate text-xs">
-              {currentUser.email}
-            </p>
-          </div>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setIsOpen(false);
-              setIsChangePasswordOpen(true);
-            }}
-            className="text-ink hover:bg-surface-sunken flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            {...popupMotion(reduced)}
+            role="menu"
+            aria-label="Account menu"
+            className="border-border bg-surface absolute top-full right-0 z-30 mt-2 w-56 rounded-md border py-1 shadow-lg"
           >
-            <KeyRound size={15} />
-            Change password
-          </button>
-        </div>
-      )}
+            <div className="border-border mb-1 border-b px-3 py-2">
+              <p className="text-ink text-sm font-medium">{currentUser.name}</p>
+              <p className="text-ink-muted truncate text-xs">
+                {currentUser.email}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setIsOpen(false);
+                triggerRef.current?.focus();
+                setIsChangePasswordOpen(true);
+              }}
+              className="text-ink hover:bg-surface-sunken flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+            >
+              <KeyRound size={15} />
+              Change password
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {isChangePasswordOpen && (
-        <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />
-      )}
+      <AnimatePresence>
+        {isChangePasswordOpen && (
+          <ChangePasswordModal onClose={() => setIsChangePasswordOpen(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

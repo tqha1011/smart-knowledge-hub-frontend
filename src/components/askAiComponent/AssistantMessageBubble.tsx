@@ -38,31 +38,35 @@ export function AssistantMessageBubble({
     answer.citations.length - VISIBLE_CITATIONS_COUNT;
 
   return (
-    <div className="mr-auto w-fit max-w-[85%]">
-      <div className="bg-surface-sunken text-ink rounded-lg rounded-tl-sm px-3 py-2 text-sm">
+    <div className="mr-auto w-fit max-w-full">
+      <div className="bg-surface-sunken text-ink rounded-lg rounded-tl-sm px-4 py-3 text-sm leading-relaxed break-words">
         <MarkdownMessage text={answer.text} />
         {answer.citations.length > 0 && (
-          <ul className="border-border mt-2 flex flex-col gap-1.5 border-t pt-2">
-            {visibleCitations.map((citation: AskAiCitation) => (
-              <li key={citation.chipNumber} className="text-xs">
-                <div className="flex items-center gap-1.5">
-                  <CitationChip number={citation.chipNumber} />
-                  <span className="text-ink font-medium">
-                    {citation.documentTitle}
-                  </span>
-                </div>
-                {citation.excerpt && (
-                  <p className="text-ink-muted mt-0.5 pl-5 italic">
-                    “{citation.excerpt}”
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+          <div className="mt-4">
+            <p className="text-ink-muted text-xs font-semibold">Sources</p>
+            <ul className="border-border mt-4 flex flex-col gap-3 border-t pt-3">
+              {visibleCitations.map((citation: AskAiCitation) => (
+                <li key={citation.chipNumber} className="text-xs">
+                  <div className="flex items-start gap-1.5">
+                    <CitationChip number={citation.chipNumber} />
+                    <span className="text-ink min-w-0 font-semibold break-words">
+                      {citation.documentTitle}
+                    </span>
+                  </div>
+                  {citation.excerpt && (
+                    <p className="text-ink-muted mt-0.5 pl-5 italic">
+                      “{citation.excerpt}”
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {hiddenCitationsCount > 0 && (
           <button
             type="button"
+            aria-expanded={showAllCitations}
             onClick={() => setShowAllCitations((prev) => !prev)}
             className="text-accent mt-1.5 flex items-center gap-1 text-xs font-semibold"
           >

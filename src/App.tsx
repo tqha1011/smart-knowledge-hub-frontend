@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -15,6 +16,7 @@ import { SpacesOverviewPage } from "./pages/spacesOverviewPage";
 import { PortalShell } from "./components/shell/PortalShell";
 import { RequireAuth } from "./components/common/RequireAuth";
 import { getAccessToken } from "./shared/authSession";
+import { connectRealtime } from "./services/realtimeService";
 
 // Gates the "/" redirect on the same access-token presence RequireAuth checks.
 function RootRedirect() {
@@ -24,6 +26,14 @@ function RootRedirect() {
 
 function AppRoutes() {
   const location = useLocation();
+
+  // Mount-only: reconnects an existing session's socket after a page
+  // refresh. Lives here, above <Routes>, so it isn't torn down and
+  // reconnected on every navigation — <Routes> below is keyed on
+  // location.pathname and remounts its subtree on each route change.
+  useEffect(() => {
+    connectRealtime();
+  }, []);
 
   return (
     <AnimatePresence mode="wait">

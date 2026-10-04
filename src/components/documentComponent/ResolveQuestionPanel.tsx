@@ -1,3 +1,5 @@
+import { Button } from "../common/Button";
+import { backdropMotion, panelMotion } from "../../shared/motion";
 // src/components/documentComponent/ResolveQuestionPanel.tsx
 import { useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -103,11 +105,8 @@ function ResolveQuestionPanelBody({
       <motion.button
         type="button"
         aria-label="Close resolve panel"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-        className="bg-ink/40 absolute inset-0 backdrop-blur-sm"
+        {...backdropMotion(prefersReducedMotion)}
+        className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
       <motion.div
@@ -115,17 +114,11 @@ function ResolveQuestionPanelBody({
         role="dialog"
         aria-modal="true"
         aria-label="Resolve question"
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{
-          duration: prefersReducedMotion ? 0 : 0.22,
-          ease: "easeOut",
-        }}
-        className="bg-surface absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col overflow-y-auto p-5 shadow-lg"
+        {...panelMotion(prefersReducedMotion)}
+        className="overlay-panel bg-surface absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col overflow-y-auto p-5 shadow-lg"
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="font-display text-ink text-lg font-semibold">
+          <h2 className="font-display text-ink text-xl font-semibold">
             Resolve question
           </h2>
           <button
@@ -146,18 +139,22 @@ function ResolveQuestionPanelBody({
         <div>
           <label className="text-ink-muted text-xs font-medium">Answer</label>
           <div className="mt-1">
-            <MarkdownContentEditor value={answer} onChange={setAnswer} />
+            <MarkdownContentEditor
+              label="Answer"
+              value={answer}
+              onChange={setAnswer}
+            />
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="bg-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="bg-accent text-on-accent mt-5 flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
         >
           {isSubmitting ? "Resolving…" : "Resolve"}
-        </button>
+        </Button>
       </motion.div>
     </div>
   );

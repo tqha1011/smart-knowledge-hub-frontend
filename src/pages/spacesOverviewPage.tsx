@@ -1,88 +1,57 @@
-import { useCallback, useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useResource } from "../components/common/useResource";
+import { ResourceState } from "../components/common/ResourceState";
+import { useCallback, useState } from "react";
 import { LogOut, Plus, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { ThemeToggle } from "../components/common/ThemeToggle";
 import { PageTransition } from "../components/common/PageTransition";
 import { Pagination } from "../components/common/Pagination";
-import { CreateSpacePanel } from "../components/spaceComponent/CreateSpacePanel";
+import { SpaceFormPanel } from "../components/spaceComponent/SpaceFormPanel";
 import { spaceColorPalette } from "../components/shell/shellMockData";
 import { authService } from "../services/authService";
+import { disconnectRealtime } from "../services/realtimeService";
 import { knowledgeSpaceService } from "../services/spaceService";
 import { toCurrentUser, userService } from "../services/userService";
 import { clearSession, getRefreshToken } from "../shared/authSession";
-import { toErrorMessage } from "../shared/handleApiError";
-import type { CurrentUser, SpaceListItemDto } from "../types";
-import type { ApiErrorResponse } from "../types/commonType/apiResponse";
+import type { SpaceListItemDto } from "../types/commonType/space";
 
 // Landing page after login — every Space the current user belongs to, one
-// card each. Both Admin and Employee land here; only per-action gating
-// (isAdmin for the global "New space" action, isAdmin || Editor-in-that-Space
-// for the per-card "Manage" action) hides buttons from Employees. Clicking a
-// card itself is what routes into that Space's Document Library (portal shell).
+// card each. Creation requires Admin; Settings requires Admin and Space Owner.
+// Clicking a card routes into that Space's Document Library (portal shell).
 export function SpacesOverviewPage() {
   const navigate = useNavigate();
-  // null = still loading.
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [spaces, setSpaces] = useState<SpaceListItemDto[]>([]);
+  const reduced = useReducedMotion();
   const [pageNumber, setPageNumber] = useState(1);
-  const [pagination, setPagination] = useState({
+  const [spaceForm, setSpaceForm] = useState<{
+    isOpen: boolean;
+    session: number;
+    space: SpaceListItemDto | null;
+  }>({ isOpen: false, session: 0, space: null });
+  const openSpaceForm = (space: SpaceListItemDto | null) => {
+    setSpaceForm((previous) => ({
+      isOpen: true,
+      session: previous.session + 1,
+      space,
+    }));
+  };
+  const meLoader = useCallback(
+    async () => toCurrentUser(await userService.getMe()),
+    [],
+  );
+  const meResource = useResource("current-user", meLoader);
+  const currentUser = meResource.data;
+  const spacesLoader = useCallback(
+    () => knowledgeSpaceService.getUserSpaces(pageNumber),
+    [pageNumber],
+  );
+  const spacesResource = useResource(`spaces:${pageNumber}`, spacesLoader);
+  const spaces = spacesResource.data?.items ?? [];
+  const pagination = spacesResource.data ?? {
     totalPages: 1,
     hasPrevious: false,
     hasNext: false,
-  });
-  const [isCreateSpaceOpen, setIsCreateSpaceOpen] = useState(false);
-
-  const loadSpaces = useCallback(async (page: number) => {
-    try {
-      const response = await knowledgeSpaceService.getUserSpaces(page);
-      setSpaces(response.items);
-      setPagination({
-        totalPages: response.totalPages,
-        hasPrevious: response.hasPrevious,
-        hasNext: response.hasNext,
-      });
-    } catch (error) {
-      toast.error(toErrorMessage(error as ApiErrorResponse));
-    }
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    userService
-      .getMe()
-      .then((dto) => {
-        if (isActive) setCurrentUser(toCurrentUser(dto));
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isActive = true;
-    knowledgeSpaceService
-      .getUserSpaces(pageNumber)
-      .then((response) => {
-        if (isActive) {
-          setSpaces(response.items);
-          setPagination({
-            totalPages: response.totalPages,
-            hasPrevious: response.hasPrevious,
-            hasNext: response.hasNext,
-          });
-        }
-      })
-      .catch((error: ApiErrorResponse) => {
-        if (isActive) toast.error(toErrorMessage(error));
-      });
-    return () => {
-      isActive = false;
-    };
-  }, [pageNumber]);
+  };
 
   const handleLogout = async () => {
     const refreshToken = getRefreshToken();
@@ -91,6 +60,7 @@ export function SpacesOverviewPage() {
     } catch {
       // best-effort — still clear the local session even if this fails
     } finally {
+      disconnectRealtime();
       clearSession();
       navigate("/login", { replace: true });
     }
@@ -98,8 +68,16 @@ export function SpacesOverviewPage() {
 
   if (currentUser === null) {
     return (
-      <div className="bg-bg text-ink-muted flex h-dvh items-center justify-center text-sm">
-        Loading…
+      <div className="bg-bg min-h-dvh p-4 sm:p-6">
+        <ResourceState
+          isLoading={meResource.isLoading}
+          hasData={false}
+          error={meResource.error}
+          onRetry={meResource.reload}
+          kind="cards"
+        >
+          {null}
+        </ResourceState>
       </div>
     );
   }
@@ -108,7 +86,7 @@ export function SpacesOverviewPage() {
     <PageTransition>
       <div className="bg-bg min-h-dvh">
         {/* Lightweight top bar — this page sits outside the portal shell, no Space is selected yet */}
-        <header className="border-border flex items-center justify-between border-b px-6 py-4">
+        <header className="border-border flex items-center justify-between border-b px-4 py-4 sm:px-6">
           <span className="bg-accent-soft font-display text-accent flex size-9 items-center justify-center rounded-md text-sm font-semibold">
             K
           </span>
@@ -132,9 +110,9 @@ export function SpacesOverviewPage() {
           </div>
         </header>
 
-        <main className="mx-auto max-w-5xl px-6 py-10">
-          <div className="mb-8 flex items-start justify-between gap-4">
-            <div>
+        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+          <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-full min-w-0 break-words">
               <h1 className="font-display text-ink text-3xl font-semibold">
                 Good morning, {currentUser.name.split(" ")[0]}
               </h1>
@@ -150,7 +128,7 @@ export function SpacesOverviewPage() {
             {currentUser.isAdmin && (
               <button
                 type="button"
-                onClick={() => setIsCreateSpaceOpen(true)}
+                onClick={() => openSpaceForm(null)}
                 className="border-border text-ink hover:bg-surface-sunken flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-semibold"
               >
                 <Plus size={16} />
@@ -159,78 +137,99 @@ export function SpacesOverviewPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {spaces.map((space, index) => {
-              // Space-scoped action: global Admin OR Editor in *this* Space —
-              // not gated on isAdmin alone, per the (Space, role) permission model.
-              const canManage = currentUser.isAdmin || space.role === "Editor";
-              const colorDot =
-                spaceColorPalette[index % spaceColorPalette.length];
+          <ResourceState
+            isLoading={spacesResource.isLoading}
+            hasData={spacesResource.data !== null}
+            error={spacesResource.error}
+            onRetry={spacesResource.reload}
+            kind="cards"
+          >
+            {spaces.length === 0 && (
+              <div className="border-border text-ink-muted rounded-lg border border-dashed p-8 text-center text-sm">
+                {currentUser.isAdmin
+                  ? "Create a space to start sharing knowledge."
+                  : "No spaces yet. Contact an administrator to join a space."}
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {spaces.map((space, index) => {
+                const canManage = currentUser.isAdmin && space.role === "Owner";
+                const colorDot =
+                  spaceColorPalette[index % spaceColorPalette.length];
 
-              return (
-                <div key={space.publicId} className="group relative">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/spaces/${space.publicId}`)}
-                    className="border-border bg-surface hover:border-accent flex w-full flex-col items-start gap-3 rounded-lg border p-5 text-left shadow-sm"
+                return (
+                  <motion.div
+                    key={space.publicId}
+                    whileHover={reduced ? undefined : { y: -2 }}
+                    transition={{ duration: reduced ? 0 : 0.12 }}
+                    className="border-border bg-surface hover:border-accent relative rounded-lg border"
                   >
-                    <span
-                      aria-hidden
-                      className="size-3 rounded-full"
-                      style={{ backgroundColor: colorDot }}
-                    />
-                    <div>
-                      <h2 className="font-display text-ink text-lg font-semibold">
-                        {space.name}
-                      </h2>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="text-ink-muted text-xs">
-                          {space.role}
-                        </span>
-                        <span className="bg-surface-sunken text-ink-muted rounded-full px-2 py-0.5 text-xs font-medium">
-                          {space.typeName}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-ink-muted flex items-center gap-3 font-mono text-xs">
-                      <span>{space.totalDocuments} documents</span>
-                    </div>
-                  </button>
-
-                  {canManage && (
                     <button
                       type="button"
-                      onClick={() =>
-                        toast.info("Space management isn't built yet.")
-                      }
-                      aria-label={`Manage ${space.name}`}
-                      className="text-ink-muted hover:bg-surface-sunken absolute top-4 right-4 flex size-8 items-center justify-center rounded-md opacity-0 group-hover:opacity-100"
+                      onClick={() => navigate(`/spaces/${space.publicId}`)}
+                      className="flex h-full w-full flex-col items-start gap-4 rounded-lg p-5 text-left"
                     >
-                      <Settings size={15} />
+                      <span
+                        aria-hidden
+                        className="size-3 rounded-full"
+                        style={{ backgroundColor: colorDot }}
+                      />
+                      <div className="w-full min-w-0 pr-8">
+                        <h2 className="font-display text-ink text-xl font-semibold break-words">
+                          {space.name}
+                        </h2>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="text-ink-muted text-xs">
+                            {space.role}
+                          </span>
+                          <span className="bg-surface-sunken text-ink-muted min-w-0 rounded-full px-2 py-0.5 text-xs font-medium [overflow-wrap:anywhere]">
+                            {space.typeName}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-ink-muted flex items-center gap-3 text-xs">
+                        <span>{space.totalDocuments} documents</span>
+                      </div>
                     </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
 
-          <Pagination
-            pageNumber={pageNumber}
-            totalPages={pagination.totalPages}
-            hasPrevious={pagination.hasPrevious}
-            hasNext={pagination.hasNext}
-            onPageChange={setPageNumber}
-          />
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={() => openSpaceForm(space)}
+                        aria-label={`Manage ${space.name}`}
+                        className="text-ink-muted hover:bg-surface-sunken absolute top-3 right-3 flex size-11 items-center justify-center rounded-md"
+                      >
+                        <Settings size={15} />
+                      </button>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <Pagination
+              pageNumber={pageNumber}
+              totalPages={pagination.totalPages}
+              hasPrevious={pagination.hasPrevious}
+              hasNext={pagination.hasNext}
+              onPageChange={setPageNumber}
+            />
+          </ResourceState>
         </main>
       </div>
 
-      <CreateSpacePanel
-        isOpen={isCreateSpaceOpen}
-        onClose={() => setIsCreateSpaceOpen(false)}
-        onCreated={() => {
-          setPageNumber(1);
-          loadSpaces(1);
-        }}
+      <SpaceFormPanel
+        key={spaceForm.session}
+        isOpen={spaceForm.isOpen}
+        space={spaceForm.space}
+        onClose={() =>
+          setSpaceForm((current) =>
+            current.session === spaceForm.session
+              ? { ...current, isOpen: false }
+              : current,
+          )
+        }
+        onSaved={() => void spacesResource.reload()}
       />
     </PageTransition>
   );

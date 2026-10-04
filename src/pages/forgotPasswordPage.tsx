@@ -1,3 +1,4 @@
+import { Button } from "../components/common/Button";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -129,13 +130,13 @@ export function ForgotPasswordPage() {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@company.com"
             />
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {isSubmitting ? "Sending OTP..." : "Send OTP"}
-            </button>
+            </Button>
           </form>
         </AuthCard>
       </PageTransition>
@@ -174,13 +175,13 @@ export function ForgotPasswordPage() {
               onChange={(event) => setOtp(event.target.value)}
               placeholder="123456"
             />
-            <button
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
             >
               {isSubmitting ? "Verifying..." : "Verify OTP"}
-            </button>
+            </Button>
           </form>
         </AuthCard>
       </PageTransition>
@@ -217,13 +218,13 @@ export function ForgotPasswordPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
             placeholder="••••••••"
           />
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-accent mt-1 rounded-md py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="bg-accent text-on-accent mt-1 rounded-md py-2.5 text-sm font-semibold disabled:opacity-60"
           >
             {isSubmitting ? "Resetting..." : "Reset password"}
-          </button>
+          </Button>
         </form>
       </AuthCard>
     </PageTransition>

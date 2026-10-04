@@ -1,4 +1,5 @@
 import { MoreHorizontal } from "lucide-react";
+import { Button } from "../common/Button";
 import type { UserDataSpaceDto } from "../../types";
 import { formatRelativeDate, initialsFromName } from "../../shared/textFormat";
 
@@ -7,6 +8,7 @@ interface UsersTableProps {
   onOpenMember: (member: UserDataSpaceDto) => void;
   /** isAdmin || Editor-in-this-Space — gates the row (⋯) action menu. */
   canManage: boolean;
+  onAddMember?: () => void;
 }
 
 // Space-scoped member list — same list/table shape as DocumentTable: a
@@ -16,28 +18,41 @@ export function UsersTable({
   members,
   onOpenMember,
   canManage,
+  onAddMember,
 }: UsersTableProps) {
   if (members.length === 0) {
     return (
-      <div className="border-border text-ink-muted flex min-h-48 items-center justify-center rounded-lg border border-dashed text-center text-sm">
-        No members in this space yet.
+      <div className="border-border text-ink-muted flex min-h-48 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-6 text-center text-sm">
+        <p>
+          {canManage
+            ? "Add members to share this space with your team."
+            : "No members yet. Contact a space manager for access."}
+        </p>
+        {onAddMember && (
+          <Button
+            onClick={onAddMember}
+            className="bg-accent text-on-accent rounded-sm px-4 py-2 font-semibold"
+          >
+            Add member
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="border-border overflow-hidden rounded-lg border">
-      <table className="w-full text-left text-sm">
+    <div className="border-border bg-surface overflow-hidden rounded-lg border">
+      <table className="w-full table-fixed text-left text-sm">
         <thead className="bg-surface-sunken text-ink-muted text-xs">
           <tr>
             <th className="px-4 py-2.5 font-medium">Person</th>
-            <th className="hidden px-4 py-2.5 font-medium sm:table-cell">
+            <th className="hidden w-28 px-4 py-3 font-medium sm:table-cell">
               Role
             </th>
-            <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+            <th className="shell:table-cell hidden w-32 px-4 py-3 font-medium">
               Joined
             </th>
-            <th className="px-2 py-2.5">
+            <th className="w-14 px-2 py-3">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
@@ -49,7 +64,7 @@ export function UsersTable({
                 <button
                   type="button"
                   onClick={() => onOpenMember(member)}
-                  className="flex min-w-0 items-center gap-2 text-left"
+                  className="flex w-full min-w-0 items-center gap-2 text-left"
                 >
                   <span className="bg-avatar-bg text-avatar-fg flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
                     {initialsFromName(member.name)}
@@ -58,7 +73,7 @@ export function UsersTable({
                     <span className="text-ink block truncate font-medium">
                       {member.name}
                     </span>
-                    <span className="text-ink-muted block truncate text-xs">
+                    <span className="text-ink-muted hidden truncate text-xs sm:block">
                       {member.email}
                     </span>
                   </span>
@@ -69,7 +84,7 @@ export function UsersTable({
                   {member.role}
                 </span>
               </td>
-              <td className="text-ink-muted hidden px-4 py-3 lg:table-cell">
+              <td className="text-ink-muted shell:table-cell hidden px-4 py-3">
                 {formatRelativeDate(member.joinedAt)}
               </td>
               <td className="px-2 py-3">
