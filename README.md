@@ -88,3 +88,23 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for branch naming, commit conventions, 
 ## License
 
 [MIT](./LICENSE)
+
+## Recruiter demo
+
+Set `VITE_API_BASE_URL=https://your-backend.onrender.com/api` before building. Configure the backend's `CORS_ALLOWED_ORIGINS` with the exact frontend origin and enable `DEMO_ENABLED` only after migrating the DB and preparing Test RAG. The login page discovers demo availability from the API; it requires no hard-coded account or frontend secrets.
+
+Visitors enter with **Vào bản demo**. Each session is a Viewer in the synthetic Test RAG corpus for one hour and 20 accepted questions. Demo tokens use sessionStorage, never refresh, and do not connect realtime. The banner shows time/quota; sample questions fill the composer. Quota exhaustion still permits reading; expiry returns to login. Citation titles open read-only source details and Markdown content. The normal admin-provisioned login continues to work.
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+Publish `dist` with an SPA fallback to `/index.html`. Backend native Render configuration, migrations, email flag and smoke checklist are documented in the sibling backend's `docs/recruiter-demo.md`. An opt-in real-API React smoke test lives at `src/test/demo-live.test.tsx`; ordinary CI skips it. Run only against a prepared local demo API with real AI and CORS `http://localhost:5179`:
+
+```bash
+VITE_API_BASE_URL=http://localhost:3179/api VITE_DEMO_LIVE_TEST=true npm test -- src/test/demo-live.test.tsx
+```
+
+That smoke uses one real session and question. Demo startup waits up to 120 seconds, explains cold starts after 8 seconds and never automatically retries session creation.

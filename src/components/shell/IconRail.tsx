@@ -1,3 +1,4 @@
+import { isDemoSession } from "../../shared/authSession";
 import { Button } from "../common/Button";
 import { Link } from "react-router-dom";
 import {
@@ -43,7 +44,9 @@ export function IconRail({
       </Link>
 
       {/* Knowledge section icons: Documents, Needs attention */}
-      {KNOWLEDGE_NAV_ITEMS.map(({ key, label, icon: Icon }) => (
+      {KNOWLEDGE_NAV_ITEMS.filter(
+        (item) => !isDemoSession() || item.key === "documents",
+      ).map(({ key, label, icon: Icon }) => (
         <button
           key={key}
           type="button"

@@ -1,3 +1,4 @@
+import { isDemoSession } from "../../shared/authSession";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound } from "lucide-react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
@@ -13,6 +14,7 @@ interface UserMenuProps {
 // local listener rather than usePanelDismiss, since a dropdown menu doesn't
 // need that hook's focus trap.
 export function UserMenu({ currentUser }: UserMenuProps) {
+  const demo = isDemoSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -79,19 +81,21 @@ export function UserMenu({ currentUser }: UserMenuProps) {
                 {currentUser.email}
               </p>
             </div>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setIsOpen(false);
-                triggerRef.current?.focus();
-                setIsChangePasswordOpen(true);
-              }}
-              className="text-ink hover:bg-surface-sunken flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
-            >
-              <KeyRound size={15} />
-              Change password
-            </button>
+            {!demo && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsOpen(false);
+                  triggerRef.current?.focus();
+                  setIsChangePasswordOpen(true);
+                }}
+                className="text-ink hover:bg-surface-sunken flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
+              >
+                <KeyRound size={15} />
+                Change password
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

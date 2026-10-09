@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 import type { Socket } from "socket.io-client";
-import { getAccessToken } from "../shared/authSession";
+import { getAccessToken, isDemoSession } from "../shared/authSession";
 import type { DocumentStatusUpdatedPayload } from "../types/commonType/realtime";
 
 const REST_BASE_URL =
@@ -19,7 +19,7 @@ let statusListeners: ((payload: DocumentStatusUpdatedPayload) => void)[] = [];
 // in storage at that moment, which is how a token refreshed mid-session
 // reaches the socket without any manual "reconnect with new token" call.
 export function connectRealtime(): void {
-  if (!getAccessToken() || socket) return;
+  if (isDemoSession() || !getAccessToken() || socket) return;
 
   socket = io(SOCKET_URL, {
     auth: (callback) => callback({ token: getAccessToken() }),

@@ -1,3 +1,6 @@
+import { DemoBanner } from "../components/shell/DemoBanner";
+import { demoService } from "../services/demoService";
+import { isDemoSession } from "../shared/authSession";
 import { motion, useReducedMotion } from "framer-motion";
 import { useResource } from "../components/common/useResource";
 import { ResourceState } from "../components/common/ResourceState";
@@ -56,7 +59,8 @@ export function SpacesOverviewPage() {
   const handleLogout = async () => {
     const refreshToken = getRefreshToken();
     try {
-      if (refreshToken) await authService.logout(refreshToken);
+      if (isDemoSession()) await demoService.revoke();
+      else if (refreshToken) await authService.logout(refreshToken);
     } catch {
       // best-effort — still clear the local session even if this fails
     } finally {
@@ -85,6 +89,7 @@ export function SpacesOverviewPage() {
   return (
     <PageTransition>
       <div className="bg-bg min-h-dvh">
+        <DemoBanner />
         {/* Lightweight top bar — this page sits outside the portal shell, no Space is selected yet */}
         <header className="border-border flex items-center justify-between border-b px-4 py-4 sm:px-6">
           <span className="bg-accent-soft font-display text-accent flex size-9 items-center justify-center rounded-md text-sm font-semibold">

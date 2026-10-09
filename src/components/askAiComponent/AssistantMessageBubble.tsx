@@ -7,6 +7,7 @@ import { MarkdownMessage } from "../common/MarkdownMessage";
 
 interface AssistantMessageBubbleProps {
   message: AssistantChatMessage;
+  onOpenDocument?: (documentId: string) => void;
   onFeedback: (
     messageId: string,
     vote: "helpful" | "not-helpful",
@@ -27,6 +28,7 @@ const VISIBLE_CITATIONS_COUNT = 2;
 export function AssistantMessageBubble({
   message,
   onFeedback,
+  onOpenDocument,
 }: AssistantMessageBubbleProps) {
   const { answer } = message;
   const [showAllCitations, setShowAllCitations] = useState(false);
@@ -49,9 +51,19 @@ export function AssistantMessageBubble({
                 <li key={citation.chipNumber} className="text-xs">
                   <div className="flex items-start gap-1.5">
                     <CitationChip number={citation.chipNumber} />
-                    <span className="text-ink min-w-0 font-semibold break-words">
-                      {citation.documentTitle}
-                    </span>
+                    {onOpenDocument ? (
+                      <button
+                        type="button"
+                        className="text-accent min-w-0 text-left font-semibold break-words hover:underline"
+                        onClick={() => onOpenDocument(citation.documentId)}
+                      >
+                        {citation.documentTitle}
+                      </button>
+                    ) : (
+                      <span className="text-ink min-w-0 font-semibold break-words">
+                        {citation.documentTitle}
+                      </span>
+                    )}
                   </div>
                   {citation.excerpt && (
                     <p className="text-ink-muted mt-0.5 pl-5 italic">

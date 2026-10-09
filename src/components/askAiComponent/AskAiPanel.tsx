@@ -1,3 +1,5 @@
+import { useDemoSession } from "../../shared/useDemoSession";
+import { demoService } from "../../services/demoService";
 import { useResource } from "../common/useResource";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, useReducedMotion } from "framer-motion";
@@ -16,6 +18,7 @@ import type { ApiErrorResponse } from "../../types/commonType/apiResponse";
 import { AskAiPanelBody } from "./AskAiPanelBody";
 
 interface AskAiPanelProps {
+  onOpenDocument?: (documentId: string) => void;
   isOpen: boolean;
   onClose: () => void;
   /** The currently selected Space — answers/citations are scoped to this Space only. */
@@ -93,6 +96,7 @@ function buildBusyMessage(): AssistantChatMessage {
 // remounts PortalShell entirely, per App.tsx's key={location.pathname})
 // resets it.
 export function AskAiPanel({
+  onOpenDocument,
   isOpen,
   onClose,
   selectedSpaceId,
@@ -100,6 +104,7 @@ export function AskAiPanel({
   onLogKnowledgeGap,
   onAnswered,
 }: AskAiPanelProps) {
+  const demo = useDemoSession();
   const [viewMode, setViewMode] = useState<"conversation" | "list">(
     "conversation",
   );
@@ -201,7 +206,7 @@ export function AskAiPanel({
 
   const handleSend = async () => {
     const question = inputValue.trim();
-    if (!question || isSending) return;
+    if (!question || isSending || demo.blocked) return;
     if (question.length > MAX_MESSAGE_LENGTH) {
       toast.error(
         `Message is too long (max ${MAX_MESSAGE_LENGTH} characters).`,
@@ -284,6 +289,7 @@ export function AskAiPanel({
         }
       }
     } finally {
+      if (demo.session) void demoService.syncStatus().catch(() => {});
       if (isMountedRef.current) setIsSending(false);
     }
   };
@@ -306,6 +312,14 @@ export function AskAiPanel({
     <AnimatePresence>
       {isOpen && (
         <AskAiPanelBody
+          onOpenDocument={onOpenDocument}
+          sendingBlocked={demo.blocked}
+          demoNotice={
+            demo.session
+              ? `Dữ liệu giả lập · Còn ${Math.ceil(demo.remainingSeconds / 60)} phút · ${demo.session.remainingQuestions} câu${demo.blocked ? " · Hết lượt hỏi; vẫn xem tài liệu được." : ""}`
+              : undefined
+          }
+          sampleQuestions={demo.session?.sampleQuestions}
           viewMode={viewMode}
           messages={messages}
           inputValue={inputValue}
