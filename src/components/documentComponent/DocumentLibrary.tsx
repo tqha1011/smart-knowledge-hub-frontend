@@ -1,6 +1,7 @@
 import { toast } from "react-toastify";
 import { motion, useIsPresent, useReducedMotion } from "framer-motion";
 import { fadeMotion, indicatorTransition } from "../../shared/motion";
+import { isDemoSession } from "../../shared/authSession";
 import { useResource } from "../common/useResource";
 import { ResourceState, LoadError } from "../common/ResourceState";
 import { Button } from "../common/Button";
@@ -282,7 +283,9 @@ export function DocumentLibrary({
 
   const tabs: { key: DocumentLibraryTab; label: string }[] = [
     { key: "all", label: "All documents" },
-    { key: "needs-attention", label: "Needs attention" },
+    ...(!isDemoSession()
+      ? [{ key: "needs-attention" as const, label: "Needs attention" }]
+      : []),
     ...(canDeleteAndRestore ? [{ key: "trash" as const, label: "Trash" }] : []),
   ];
 

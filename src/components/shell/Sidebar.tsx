@@ -1,3 +1,4 @@
+import { isDemoSession } from "../../shared/authSession";
 import { Button } from "../common/Button";
 import {
   ADMIN_NAV_ITEM,
@@ -103,7 +104,9 @@ export function Sidebar({
       <p className="text-ink-muted mb-1 px-2.5 text-xs font-medium">
         Knowledge
       </p>
-      {KNOWLEDGE_NAV_ITEMS.map(({ key, label, icon }) => (
+      {KNOWLEDGE_NAV_ITEMS.filter(
+        (item) => !isDemoSession() || item.key === "documents",
+      ).map(({ key, label, icon }) => (
         <NavRow
           key={key}
           namespace={variant}

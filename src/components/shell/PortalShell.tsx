@@ -1,3 +1,5 @@
+import { isDemoSession } from "../../shared/authSession";
+import { DemoBanner } from "./DemoBanner";
 import { useResource } from "../common/useResource";
 import { ResourceState, Skeleton } from "../common/ResourceState";
 import { useCallback, useRef, useState } from "react";
@@ -10,6 +12,7 @@ import { BottomTabBar } from "./BottomTabBar";
 import { AskAiPanel } from "../askAiComponent/AskAiPanel";
 import type { ShellNavKey } from "./navItems";
 import { spaceColorPalette } from "./shellMockData";
+import { DocumentDetailPanel } from "../documentComponent/DocumentDetailPanel";
 import { DocumentLibrary } from "../documentComponent/DocumentLibrary";
 import type { DocumentLibraryTab } from "../documentComponent/DocumentLibrary";
 import { UsersRolesPage } from "../usersComponent/UsersRolesPage";
@@ -29,6 +32,7 @@ function toSpace(item: SpaceListItemDto, colorDot: string): Space {
 export function PortalShell() {
   const { spaceId } = useParams<{ spaceId: string }>();
   const navigate = useNavigate();
+  const demo = isDemoSession();
   // Invalidate the old Space synchronously when navigation starts, including
   // the interval before its exit animation and effect cleanup run.
   const activeSpaceId = useRef(spaceId);
@@ -43,7 +47,11 @@ export function PortalShell() {
     setLibraryTab(key === "needs-attention" ? "needs-attention" : "all");
   };
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isAskAiOpen, setIsAskAiOpen] = useState(false);
+  const [citationDocumentId, setCitationDocumentId] = useState<string | null>(
+    null,
+  );
+  const [citationRevision, setCitationRevision] = useState(0);
+  const [isAskAiOpen, setIsAskAiOpen] = useState(demo);
   const [searchValue, setSearchValue] = useState("");
   const [documentSearch, setDocumentSearch] = useState({
     query: "",
@@ -80,7 +88,7 @@ export function PortalShell() {
     `gaps:${spaceId}`,
     gapsLoader,
     0,
-    Boolean(spaceId),
+    Boolean(spaceId) && !demo,
   );
   const knowledgeGaps = gapsResource.data?.items ?? [];
   const loadKnowledgeGaps = gapsResource.reload;
@@ -140,7 +148,7 @@ export function PortalShell() {
 
   // Refresh the real queue after an answer without sources.
   const handleLogKnowledgeGap = () => {
-    loadKnowledgeGaps();
+    if (!demo) loadKnowledgeGaps();
   };
 
   const handleLibraryTabChange = (tab: DocumentLibraryTab) => {
@@ -158,6 +166,7 @@ export function PortalShell() {
   return (
     <PageTransition>
       <div className="bg-bg flex h-dvh flex-col">
+        <DemoBanner />
         <div className="flex min-h-0 flex-1">
           {/* Icon rail — persistent from sm (640px) up */}
           <IconRail
@@ -252,7 +261,26 @@ export function PortalShell() {
         />
 
         {/* Ask AI floating panel — spec piece 5 */}
+        <DocumentDetailPanel
+          documentPublicId={citationDocumentId}
+          isOpen={citationDocumentId !== null}
+          space={selectedSpace}
+          canManage={false}
+          canDeleteAndRestore={false}
+          sessionId={citationRevision}
+          isCurrentSpace={isCurrentSpace}
+          onClose={() => setCitationDocumentId(null)}
+          onDeleted={() => {}}
+          onEditDetails={() => {}}
+          onReplaceFile={() => {}}
+          onRetried={() => {}}
+        />
         <AskAiPanel
+          onOpenDocument={(documentId) => {
+            setIsAskAiOpen(false);
+            setCitationDocumentId(documentId);
+            setCitationRevision((value) => value + 1);
+          }}
           isOpen={isAskAiOpen}
           onClose={() => setIsAskAiOpen(false)}
           selectedSpaceId={selectedSpace.id}

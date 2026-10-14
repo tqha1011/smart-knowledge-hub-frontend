@@ -13,6 +13,10 @@ import { ChatSessionList } from "./ChatSessionList";
 import { usePanelDismiss } from "../common/usePanelDismiss";
 
 interface AskAiPanelBodyProps {
+  onOpenDocument?: (documentId: string) => void;
+  sendingBlocked?: boolean;
+  demoNotice?: string;
+  sampleQuestions?: string[];
   viewMode: "conversation" | "list";
   messages: ChatMessage[];
   inputValue: string;
@@ -50,6 +54,10 @@ interface AskAiPanelBodyProps {
 // inside the same 440px chrome rather than widening the panel for a
 // persistent sidebar.
 export function AskAiPanelBody({
+  onOpenDocument,
+  sendingBlocked = false,
+  demoNotice,
+  sampleQuestions,
   viewMode,
   messages,
   inputValue,
@@ -99,6 +107,11 @@ export function AskAiPanelBody({
         {...panelMotion(prefersReducedMotion)}
         className="overlay-panel bg-surface absolute inset-y-0 right-0 flex w-full max-w-[440px] flex-col p-5 shadow-lg"
       >
+        {demoNotice && (
+          <p role="status" className="text-accent mb-3 text-xs">
+            {demoNotice}
+          </p>
+        )}
         <div className="mb-4 flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h2 className="font-display text-ink flex items-center gap-2 text-xl font-semibold">
@@ -164,6 +177,19 @@ export function AskAiPanelBody({
                 onRetry={onRetrySession}
                 kind="detail"
               >
+                {messages.length === 0 &&
+                  !isSending &&
+                  sampleQuestions?.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      disabled={sendingBlocked}
+                      onClick={() => onInputChange(question)}
+                      className="border-border text-ink hover:bg-accent-soft mb-2 w-full rounded-md border p-3 text-left text-xs disabled:opacity-60"
+                    >
+                      {question}
+                    </button>
+                  ))}
                 {messages.length === 0 && !isSending && (
                   <div className="text-ink-muted flex min-h-48 items-center justify-center p-4 text-center text-sm">
                     Ask a question about a document in this space.
@@ -181,6 +207,7 @@ export function AskAiPanelBody({
                         <AssistantMessageBubble
                           message={message}
                           onFeedback={onFeedback}
+                          onOpenDocument={onOpenDocument}
                         />
                       )}
                     </motion.div>
@@ -205,7 +232,10 @@ export function AskAiPanelBody({
                 placeholder="Ask a question…"
                 aria-label="Question"
                 disabled={
-                  isSending || isLoadingSession || Boolean(sessionError)
+                  sendingBlocked ||
+                  isSending ||
+                  isLoadingSession ||
+                  Boolean(sessionError)
                 }
                 className="border-border text-ink placeholder:text-ink-muted focus:border-accent min-w-0 flex-1 rounded-md border px-3 py-2 text-sm outline-none disabled:opacity-60"
               />
@@ -213,6 +243,7 @@ export function AskAiPanelBody({
                 type="submit"
                 disabled={
                   !inputValue.trim() ||
+                  sendingBlocked ||
                   isSending ||
                   isLoadingSession ||
                   Boolean(sessionError)

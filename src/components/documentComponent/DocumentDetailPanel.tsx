@@ -295,6 +295,14 @@ function DocumentDetailPanelBody({
                 </p>
               )}
 
+              {document.fileType === "MD" && document.content && (
+                <section
+                  aria-label="Document content"
+                  className="border-border mb-4 border-y py-4 text-sm"
+                >
+                  <MarkdownMessage text={document.content} />
+                </section>
+              )}
               <dl className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <dt className="text-ink-muted text-xs">Space</dt>

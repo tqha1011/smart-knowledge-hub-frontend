@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getAccessToken } from "../../shared/authSession";
+import {
+  getAccessToken,
+  isDemoSession,
+  clearSession,
+} from "../../shared/authSession";
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -15,7 +19,15 @@ export function RequireAuth({ children }: RequireAuthProps) {
   const hasSession = Boolean(getAccessToken());
 
   if (!hasSession) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    const demoExpired = isDemoSession();
+    if (demoExpired) clearSession();
+    return (
+      <Navigate
+        to={demoExpired ? "/login?demo=expired" : "/login"}
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
   return <>{children}</>;

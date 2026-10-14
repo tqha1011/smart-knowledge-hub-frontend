@@ -1,3 +1,4 @@
+import { DemoEntry } from "../components/authComponent/DemoEntry";
 import { Button } from "../components/common/Button";
 import { useState } from "react";
 import type { FormEvent } from "react";
@@ -115,6 +116,12 @@ export function LoginPage() {
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+        {window.location.search.includes("demo=expired") && (
+          <p role="status" className="text-warn-fg mt-3 text-sm">
+            Phiên demo đã hết hạn. Bạn có thể bắt đầu phiên mới.
+          </p>
+        )}
+        <DemoEntry />
       </AuthCard>
     </PageTransition>
   );
